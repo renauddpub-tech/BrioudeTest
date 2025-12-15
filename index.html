@@ -26,7 +26,6 @@
 
 <script>
 (()=>{
-
 /* =====================
    CANVAS
 ===================== */
@@ -190,7 +189,6 @@ function openMenu(items, kind){
 const UI_SKIN = { slice:null };
 
 function detectNineSlice(img){
-  // textbox UNI => ce détecteur fonctionne très bien.
   try{
     const w=img.naturalWidth||img.width;
     const h=img.naturalHeight||img.height;
@@ -209,7 +207,6 @@ function detectNineSlice(img){
 
     const cx=(w/2)|0, cy=(h/2)|0;
 
-    // centre : couleur de référence
     let sr=0,sg=0,sb=0,c=0;
     for(let yy=cy-2; yy<=cy+2; yy++){
       for(let xx=cx-2; xx<=cx+2; xx++){
@@ -312,35 +309,60 @@ function drawBox(x,y,w,h){
 }
 
 /* =====================
-   TEXT FIT
+   TEXT FIT (PATCH: shrink + ellipsis + wrap robuste)
 ===================== */
 function setFont(px){ ctx.font = `${px}px monospace`; }
 
-function drawFittedText(text, x, y, maxW, basePx, minPx=8){
+function ellipsize(text, maxW, px){
+  setFont(px);
+  if(ctx.measureText(text).width <= maxW) return text;
+
+  const ell="...";
+  let cut=text.length;
+  while(cut>0 && ctx.measureText(text.slice(0,cut)+ell).width>maxW) cut--;
+  return cut>0 ? (text.slice(0,cut)+ell) : ell;
+}
+
+function drawFittedText(text, x, y, maxW, basePx, minPx=6){
   let px=basePx;
   while(px>minPx){
     setFont(px);
     if(ctx.measureText(text).width <= maxW) break;
     px--;
   }
-  ctx.fillText(text,x,y);
+  setFont(px);
+  ctx.fillText(ellipsize(text, maxW, px), x, y);
 }
 
+// wrap qui coupe aussi les mots trop longs
 function wrapText(text, maxW, basePx){
   setFont(basePx);
-  const words = text.split(/\s+/);
-  const lines=[];
-  let line="";
-  for(const w of words){
-    const test = line ? (line+" "+w) : w;
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+
+  const push = (l)=>{ if(l!=="") lines.push(l); };
+
+  for(let word of words){
+    while(ctx.measureText(word).width > maxW){
+      let cut = word.length;
+      while(cut>1 && ctx.measureText(word.slice(0,cut)).width > maxW) cut--;
+      if(line){ push(line); line=""; }
+      push(word.slice(0,cut));
+      word = word.slice(cut);
+    }
+
+    const test = line ? (line+" "+word) : word;
     if(ctx.measureText(test).width <= maxW){
-      line=test;
+      line = test;
     }else{
-      if(line) lines.push(line);
-      line=w;
+      if(line) push(line);
+      line = word;
     }
   }
-  if(line) lines.push(line);
+
+  if(line) push(line);
   return lines;
 }
 
@@ -350,7 +372,7 @@ function wrapText(text, maxW, basePx){
 function createFighter(name,types,stats,sprite){
   const atk = stats.atk ?? 50;
   const def = stats.def ?? 50;
-  const sp  = stats.sp  ?? atk;   // fallback = pas de régression
+  const sp  = stats.sp  ?? atk;
   const spDef = stats.spDef ?? def;
   const spd = stats.spd ?? 50;
 
@@ -399,7 +421,6 @@ function burnTick(f){
 
 /* =====================
    MOVES (signature + catégories)
-   category: "physical" | "special" | "status"
 ===================== */
 const MOVES = {
   remy: [
@@ -465,13 +486,11 @@ function computeDamage(attacker,defender,move){
   let atkStat = attacker.atk;
   let defStat = defender.def;
 
-  // spécial : sp / spDef
   if(cat==="special"){
     atkStat = attacker.sp;
     defStat = defender.spDef;
   }
 
-  // burn : malus uniquement sur le physique (ATK)
   if(cat==="physical" && attacker.status.burn){
     atkStat = Math.floor(atkStat*0.5);
   }
@@ -539,7 +558,7 @@ function applyEffects(attacker, defender, move, defenderLabel){
 }
 
 /* =====================
-   IA ENNEMIE (types + statuts + signature)
+   IA ENNEMIE
 ===================== */
 function chooseEnemyMove(enemy, player){
   let best=null;
@@ -563,7 +582,6 @@ function chooseEnemyMove(enemy, player){
 
     if(player.hp<30 && (m.power||0)>=18) score += 15;
 
-    // léger bruit
     score += Math.random()*6;
 
     if(score>bestScore){
@@ -953,9 +971,6 @@ function drawTextbox(){
 
 /* =====================
    MENU + 2 INFO BOXES
-   - gauche: liste
-   - droite haut: move/type/cat (ou item)
-   - droite bas: stats Remy + ennemi
 ===================== */
 function statusTag(f){
   let s="";
@@ -993,11 +1008,9 @@ function drawMenu(){
   const xInfo=xList+wList+gap;
   const wInfo=304-wList-gap;
 
-  // 2 petites boxes à droite
   const hTop=30;
   const hBot=h-hTop;
 
-  // boxes
   drawBox(xList,y,wList,h);
   drawBox(xInfo,y,wInfo,hTop);
   drawBox(xInfo,y+hTop,wInfo,hBot);
@@ -1043,11 +1056,15 @@ function drawMenu(){
       drawFittedText(it.desc, tx, ty+10, tw, 10, 8);
     }
   } else {
+    // PATCH: hint sur 2 lignes (sinon ça déborde)
     const pick = UI.items[UI.menuIdx] || "";
     const hint = (pick==="FIGHT") ? "Choisir attaque" :
                  (pick==="BAG")   ? "Utiliser objet" :
                  (pick==="RUN")   ? "Tenter fuite"   : "";
-    drawFittedText(hint, tx, ty+10, tw, 10, 8);
+
+    const lines = wrapText(hint, tw, 10);
+    drawFittedText(lines[0] || "", tx, ty+2,  tw, 10, 6);
+    drawFittedText(lines[1] || "", tx, ty+14, tw, 10, 6);
   }
 
   // INFO BOTTOM (STATS)
@@ -1092,8 +1109,9 @@ function drawBattle(){
 
     const barY = iy+22;
     drawHPBar(ix, barY, enemy.hpVis, enemy.maxHP, 70, 5);
-    ctx.font="10px monospace";
-    ctx.fillText(`HP ${Math.round(enemy.hpVis)}/${enemy.maxHP}`, ix, barY+16);
+
+    // PATCH: HP fit + ellipsis (au lieu de fillText brut)
+    drawFittedText(`HP ${Math.round(enemy.hpVis)}/${enemy.maxHP}`, ix, barY+16, iw, 10, 6);
   }
 
   // HUD player
@@ -1109,8 +1127,9 @@ function drawBattle(){
 
     const barY=iy+22;
     drawHPBar(ix, barY, player.hpVis, player.maxHP, 70, 5);
-    ctx.font="10px monospace";
-    ctx.fillText(`HP ${Math.round(player.hpVis)}/${player.maxHP}`, ix, barY+16);
+
+    // PATCH: HP fit + ellipsis
+    drawFittedText(`HP ${Math.round(player.hpVis)}/${player.maxHP}`, ix, barY+16, iw, 10, 6);
   }
 
   drawOverlay();

@@ -1,1205 +1,1189 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!doctype html>
+<html lang="fr">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.1">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+<meta charset="utf-8">
+<title>Brioude 2026, a tale of AURA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{
+    margin:0;
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+  }
+  canvas{
+    width:640px;
+    height:480px;
+    image-rendering:pixelated;
+    background:#f3f0da;
+  }
+</style>
 </head>
 <body>
-<p class="p1">&lt;!doctype html&gt;</p>
-<p class="p1">&lt;html lang="fr"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1">&lt;meta charset="utf-8"&gt;</p>
-<p class="p1">&lt;title&gt;Brioude 2026, a tale of AURA&lt;/title&gt;</p>
-<p class="p1">&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</p>
-<p class="p1">&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>body{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>margin:0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background:#000;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>display:flex;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>justify-content:center;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>align-items:center;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>height:100vh;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>canvas{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>width:640px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>height:480px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>image-rendering:pixelated;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background:#f3f0da;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1">&lt;canvas id="game" width="320" height="240"&gt;&lt;/canvas&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;script&gt;</p>
-<p class="p1">(()=&gt;{</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>CANVAS</p>
-<p class="p1">===================== */</p>
-<p class="p1">const canvas=document.getElementById("game");</p>
-<p class="p1">const ctx=canvas.getContext("2d");</p>
-<p class="p1">ctx.imageSmoothingEnabled=false;</p>
-<p class="p1">ctx.textBaseline="alphabetic";</p>
-<p class="p1">const W=canvas.width,H=canvas.height;</p>
-<p class="p2"><br></p>
-<p class="p1">const FONT_MAIN = "12px monospace";</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>ASSETS</p>
-<p class="p1">===================== */</p>
-<p class="p1">const ASSETS={</p>
-<p class="p1"><span class="Apple-converted-space">  </span>sprites:{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>remy_back:"remy_back.png",</p>
-<p class="p1"><span class="Apple-converted-space">    </span>wauquiez_front:"wauquiez_front.png",</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ciotti_front:"ciotti_front.png",</p>
-<p class="p1"><span class="Apple-converted-space">    </span>maite_front:"maite_front.png",</p>
-<p class="p1"><span class="Apple-converted-space">    </span>edile_front:"edile_front.png"</p>
-<p class="p1"><span class="Apple-converted-space">  </span>},</p>
-<p class="p1"><span class="Apple-converted-space">  </span>background:{ battle:"battle_bg.png" },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ui:{ cursor:"cursor.png", textbox:"textbox.png" }</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">const IMG={};</p>
-<p class="p1">function preloadAssets(done){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const list=[];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>Object.values(ASSETS).forEach(group=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>Object.entries(group).forEach(([k,src])=&gt;list.push([k,src]));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(list.length===0){ done(); return; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>let loaded=0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>list.forEach(([k,src])=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const i=new Image();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>i.onload=()=&gt;{ IMG[k]=i; if(++loaded===list.length) done(); };</p>
-<p class="p1"><span class="Apple-converted-space">    </span>i.onerror=()=&gt;{ console.warn("Missing:",src); if(++loaded===list.length) done(); };</p>
-<p class="p1"><span class="Apple-converted-space">    </span>i.src=src;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>UTILS</p>
-<p class="p1">===================== */</p>
-<p class="p1">const clamp=(v,a,b)=&gt;Math.max(a,Math.min(b,v));</p>
-<p class="p1">const chance=p=&gt;Math.random()&lt;p;</p>
-<p class="p1">const rand=(a,b)=&gt;Math.floor(Math.random()*(b-a+1))+a;</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>FX (ANIMS)</p>
-<p class="p1">===================== */</p>
-<p class="p1">const FX={</p>
-<p class="p1"><span class="Apple-converted-space">  </span>shakeX:0, shakeY:0, shakeFrames:0,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>flashFrames:0,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>overlay:null, <span class="Apple-converted-space">  </span>// {kind,x,y,t,frames}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>floatTexts:[],<span class="Apple-converted-space">  </span>// [{text,x,y,vy,frames}]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>hitAnim:{ player:0, enemy:0 } // bounce timer</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">function startShake(kind="hit"){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.shakeFrames = (kind==="heavy") ? 10 : 6;</p>
-<p class="p1">}</p>
-<p class="p1">function flash(frames=2){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.flashFrames = Math.max(FX.flashFrames, frames);</p>
-<p class="p1">}</p>
-<p class="p1">function setOverlay(kind,x,y,frames=18){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.overlay = {kind,x,y,t:0,frames};</p>
-<p class="p1">}</p>
-<p class="p1">function addFloatText(text,x,y){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.floatTexts.push({text,x,y,vy:-0.25,frames:42});</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function updateFX(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(FX.shakeFrames&gt;0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>FX.shakeX=(Math.random()-0.5)*6;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>FX.shakeY=(Math.random()-0.5)*4;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>FX.shakeFrames--;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>FX.shakeX=FX.shakeY=0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(FX.flashFrames&gt;0) FX.flashFrames--;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(FX.overlay){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>FX.overlay.t++;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>FX.overlay.frames--;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(FX.overlay.frames&lt;=0) FX.overlay=null;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.floatTexts.forEach(ft=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ft.y += ft.vy;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ft.frames--;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.floatTexts = FX.floatTexts.filter(ft=&gt;ft.frames&gt;0);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(FX.hitAnim.player&gt;0) FX.hitAnim.player--;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(FX.hitAnim.enemy&gt;0) FX.hitAnim.enemy--;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>TYPES</p>
-<p class="p1">===================== */</p>
-<p class="p1">const TYPE_CHART={</p>
-<p class="p1"><span class="Apple-converted-space">  </span>action:{ blague:2, parisianisme:0.5 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>blague:{ parisianisme:2, recherche:0.5 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>recherche:{ blague:2, parisianisme:0.5 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>parisianisme:{ action:2, tradition:0.5 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>tradition:{ parisianisme:2, recherche:0.5 }</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">function typeMultiplier(atkType,defTypes){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let m=1;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>defTypes.forEach(t=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const v=TYPE_CHART[atkType]?.[t];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(v) m*=v;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return m;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>UI TEXTE / MENU</p>
-<p class="p1">===================== */</p>
-<p class="p1">const UI={</p>
-<p class="p1"><span class="Apple-converted-space">  </span>text:"",visible:"",idx:0,typing:false,timer:0,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queue:[],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>menu:false,items:[],menuIdx:0,menuKind:"none",</p>
-<p class="p1"><span class="Apple-converted-space">  </span>cooldown:0</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">function showText(t){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.text=t;UI.visible="";UI.idx=0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.typing=true;UI.timer=0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=false; UI.menuKind="none";</p>
-<p class="p1">}</p>
-<p class="p1">function queueText(t){ UI.queue.push(t); }</p>
-<p class="p1">function updateText(dt){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!UI.typing) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.timer+=dt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>while(UI.timer&gt;22 &amp;&amp; UI.idx&lt;UI.text.length){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>UI.visible+=UI.text[UI.idx++];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>UI.timer-=22;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.idx&gt;=UI.text.length) UI.typing=false;</p>
-<p class="p1">}</p>
-<p class="p1">function nextText(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.typing){ UI.visible=UI.text; UI.typing=false; return true; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.queue.length){ showText(UI.queue.shift()); return true; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.text=""; UI.visible="";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return false;</p>
-<p class="p1">}</p>
-<p class="p1">function openMenu(items, kind){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=true; UI.items=items; UI.menuIdx=0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menuKind = kind || "root";</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>9-SLICE TEXTBOX (anti-déformation)</p>
-<p class="p1">===================== */</p>
-<p class="p1">const UI_SKIN = { slice:null };</p>
-<p class="p2"><br></p>
-<p class="p1">function detectNineSlice(img){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>// textbox UNI =&gt; ce détecteur fonctionne très bien.</p>
-<p class="p1"><span class="Apple-converted-space">  </span>try{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const w=img.naturalWidth||img.width;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const h=img.naturalHeight||img.height;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const oc=document.createElement("canvas");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>oc.width=w; oc.height=h;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const octx=oc.getContext("2d",{willReadFrequently:true});</p>
-<p class="p1"><span class="Apple-converted-space">    </span>octx.imageSmoothingEnabled=false;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>octx.drawImage(img,0,0);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const d=octx.getImageData(0,0,w,h).data;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const get=(x,y)=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const i=(y*w+x)*4;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>return [d[i],d[i+1],d[i+2],d[i+3]];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const cx=(w/2)|0, cy=(h/2)|0;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// centre : couleur de référence</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let sr=0,sg=0,sb=0,c=0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for(let yy=cy-2; yy&lt;=cy+2; yy++){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>for(let xx=cx-2; xx&lt;=cx+2; xx++){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const p=get(clamp(xx,0,w-1),clamp(yy,0,h-1));</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(p[3]&gt;0){ sr+=p[0]; sg+=p[1]; sb+=p[2]; c++; }</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(c===0) return {l:24,r:24,t:24,b:24};</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const center=[(sr/c)|0,(sg/c)|0,(sb/c)|0];</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const dist=(p)=&gt; Math.abs(p[0]-center[0])+Math.abs(p[1]-center[1])+Math.abs(p[2]-center[2]);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const tol=90;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>let l=0; for(let x=0; x&lt;cx; x++){ const p=get(x,cy); if(p[3]&gt;0 &amp;&amp; dist(p)&lt;tol){ l=x; break; } }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let r=0; for(let x=w-1; x&gt;cx; x--){ const p=get(x,cy); if(p[3]&gt;0 &amp;&amp; dist(p)&lt;tol){ r=(w-1-x); break; } }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let t=0; for(let y=0; y&lt;cy; y++){ const p=get(cx,y); if(p[3]&gt;0 &amp;&amp; dist(p)&lt;tol){ t=y; break; } }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let b=0; for(let y=h-1; y&gt;cy; y--){ const p=get(cx,y); if(p[3]&gt;0 &amp;&amp; dist(p)&lt;tol){ b=(h-1-y); break; } }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const max=Math.floor(Math.min(w,h)/3);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>l=clamp(l,8,max); r=clamp(r,8,max); t=clamp(t,8,max); b=clamp(b,8,max);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return {l,r,t,b};</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}catch(e){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return {l:24,r:24,t:24,b:24};</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function boxMetrics(w,h){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const img=IMG.textbox;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!img || !UI_SKIN.slice) return {dl:6,dr:6,dt:6,db:6,padL:12,padT:14,padR:12,padB:12};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const iw=img.naturalWidth||img.width;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const ih=img.naturalHeight||img.height;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sx=w/iw;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sy=h/ih;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>let dl=Math.max(2, Math.round(UI_SKIN.slice.l*sx));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let dr=Math.max(2, Math.round(UI_SKIN.slice.r*sx));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let dt=Math.max(2, Math.round(UI_SKIN.slice.t*sy));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let db=Math.max(2, Math.round(UI_SKIN.slice.b*sy));</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const fitLR = (w-2);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(dl+dr&gt;fitLR){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const k=fitLR/(dl+dr);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>dl=Math.max(1, (dl*k)|0);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>dr=Math.max(1, (dr*k)|0);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const fitTB = (h-2);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(dt+db&gt;fitTB){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const k=fitTB/(dt+db);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>dt=Math.max(1, (dt*k)|0);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>db=Math.max(1, (db*k)|0);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const padL = dl + 8;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const padR = dr + 8;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const padT = dt + 10;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const padB = db + 8;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>return {dl,dr,dt,db,padL,padT,padR,padB};</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function drawNineSlice(img,x,y,w,h){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const iw=img.naturalWidth||img.width;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const ih=img.naturalHeight||img.height;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const s=UI_SKIN.slice || {l:24,r:24,t:24,b:24};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const m=boxMetrics(w,h);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const dl=m.dl, dr=m.dr, dt=m.dt, db=m.db;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sl=s.l, sr=s.r, st=s.t, sb=s.b;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const smw = Math.max(0, iw - sl - sr);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const smh = Math.max(0, ih - st - sb);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const dmw = Math.max(0, w - dl - dr);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const dmh = Math.max(0, h - dt - db);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, 0,0, sl,st, x,y, dl,dt);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, sl,0, smw,st, x+dl,y, dmw,dt);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, iw-sr,0, sr,st, x+w-dr,y, dr,dt);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, 0,st, sl,smh, x,y+dt, dl,dmh);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, sl,st, smw,smh, x+dl,y+dt, dmw,dmh);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, iw-sr,st, sr,smh, x+w-dr,y+dt, dr,dmh);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, 0,ih-sb, sl,sb, x,y+h-db, dl,db);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, sl,ih-sb, smw,sb, x+dl,y+h-db, dmw,db);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.drawImage(img, iw-sr,ih-sb, sr,sb, x+w-dr,y+h-db, dr,db);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function drawBox(x,y,w,h){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(IMG.textbox &amp;&amp; UI_SKIN.slice){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawNineSlice(IMG.textbox,x,y,w,h);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#f8f8f8";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillRect(x,y,w,h);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.strokeStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.strokeRect(x,y,w,h);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>TEXT FIT</p>
-<p class="p1">===================== */</p>
-<p class="p1">function setFont(px){ ctx.font = `${px}px monospace`; }</p>
-<p class="p2"><br></p>
-<p class="p1">function drawFittedText(text, x, y, maxW, basePx, minPx=8){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let px=basePx;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>while(px&gt;minPx){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>setFont(px);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(ctx.measureText(text).width &lt;= maxW) break;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>px--;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillText(text,x,y);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function wrapText(text, maxW, basePx){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>setFont(basePx);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const words = text.split(/\s+/);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lines=[];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let line="";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(const w of words){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const test = line ? (line+" "+w) : w;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(ctx.measureText(test).width &lt;= maxW){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>line=test;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}else{</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(line) lines.push(line);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>line=w;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(line) lines.push(line);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return lines;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>FIGHTERS (stats Pokemon-like)</p>
-<p class="p1">===================== */</p>
-<p class="p1">function createFighter(name,types,stats,sprite){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const atk = stats.atk ?? 50;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const def = stats.def ?? 50;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sp<span class="Apple-converted-space">  </span>= stats.sp<span class="Apple-converted-space">  </span>?? atk; <span class="Apple-converted-space">  </span>// fallback = pas de régression</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const spDef = stats.spDef ?? def;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const spd = stats.spd ?? 50;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>return{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>name,types,sprite,</p>
-<p class="p1"><span class="Apple-converted-space">    </span>maxHP:100,</p>
-<p class="p1"><span class="Apple-converted-space">    </span>hp:100,</p>
-<p class="p1"><span class="Apple-converted-space">    </span>hpVis:100,</p>
-<p class="p1"><span class="Apple-converted-space">    </span>atk, def, sp, spDef, spd,</p>
-<p class="p1"><span class="Apple-converted-space">    </span>status:{ burn:false, sleep:0, confusion:0 },</p>
-<p class="p1"><span class="Apple-converted-space">    </span>moves:[]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>};</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>STATUTS</p>
-<p class="p1">===================== */</p>
-<p class="p1">function canAct(f){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(f.status.sleep&gt;0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>f.status.sleep--;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText(f.name+" dort...");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>setOverlay("sleep", f===player?70:240, f===player?130:70, 18);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return false;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(f.status.confusion&gt;0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>f.status.confusion--;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText(f.name+" est confus...");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>setOverlay("confusion", f===player?70:240, f===player?130:70, 18);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(chance(0.5)){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const dmg=Math.max(1,Math.floor(f.maxHP*0.08));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>applyDamage(f, dmg, {floatLabel:"-CONFUSION"});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>queueText("Il se blesse dans sa confusion !");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>return false;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return true;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function burnTick(f){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!f.status.burn) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const dmg=Math.max(1,Math.floor(f.maxHP*0.06));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText(f.name+" souffre de sa brulure !");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>setOverlay("burn", f===player?70:240, f===player?130:70, 18);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>applyDamage(f, dmg, {floatLabel:"-BRULURE"});</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>MOVES (signature + catégories)</p>
-<p class="p1"><span class="Apple-converted-space">   </span>category: "physical" | "special" | "status"</p>
-<p class="p1">===================== */</p>
-<p class="p1">const MOVES = {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>remy: [</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Cahier de recherche", power:24, type:"recherche", category:"special"},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Plaidoyer", power:18, type:"action", category:"special", effects:[{kind:"confusion", chance:0.40}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Bourree auvergnate", power:28, type:"tradition", category:"special"},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Second degre", power:20, type:"blague", category:"physical", effects:[{kind:"burn", chance:0.30}]}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>wauquiez: [</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Dotations publiques", power:14, type:"action", category:"status", effects:[{kind:"sleep", chance:0.45, turns:[1,2]}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Mauvaise foi", power:22, type:"blague", category:"physical"},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Ce que les francais veulent", power:20, type:"parisianisme", category:"special", effects:[{kind:"confusion", chance:0.35}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Bottes en caoutchouc", power:24, type:"tradition", category:"physical", effects:[{kind:"burn", chance:0.20}]}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ciotti: [</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Retranchement", power:0, type:"parisianisme", category:"status", effects:[{kind:"sleep", chance:0.20, turns:[1,1]}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Accent chantant", power:22, type:"tradition", category:"physical"},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Chauvinisme", power:18, type:"parisianisme", category:"status", effects:[{kind:"confusion", chance:0.25}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"UDR", power:20, type:"blague", category:"physical", effects:[{kind:"burn", chance:0.20}]}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>maite: [</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Ortolan", power:0, type:"tradition", category:"status", effects:[{kind:"heal", value:22}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Aiguille", power:22, type:"tradition", category:"special", effects:[{kind:"confusion", chance:0.35}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Icone", power:20, type:"blague", category:"special"},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Indigestion", power:26, type:"tradition", category:"special", effects:[{kind:"sleep", chance:0.25, turns:[1,2]}]}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>edile: [</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Conseil municipal", power:22, type:"action", category:"special"},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Clientelisme", power:18, type:"action", category:"special", effects:[{kind:"burn", chance:0.15}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Monsieur le maire", power:0, type:"action", category:"status", effects:[{kind:"confusion", chance:0.25}]},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{name:"Bon sens paysan", power:22, type:"tradition", category:"physical", effects:[{kind:"confusion", chance:0.25}]}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>]</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>DATA</p>
-<p class="p1">===================== */</p>
-<p class="p1">const player=createFighter(</p>
-<p class="p1"><span class="Apple-converted-space">  </span>"Remy",</p>
-<p class="p1"><span class="Apple-converted-space">  </span>["recherche","blague"],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{atk:55,def:50,sp:65,spDef:55,spd:60},</p>
-<p class="p1"><span class="Apple-converted-space">  </span>"remy_back"</p>
-<p class="p1">);</p>
-<p class="p1">player.moves = MOVES.remy.map(m=&gt;({ ...m }));</p>
-<p class="p2"><br></p>
-<p class="p1">const CAMPAIGN=[</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{name:"Laurent Wauquiez", sprite:"wauquiez_front", types:["parisianisme"], stats:{atk:60,def:45,sp:58,spDef:46,spd:50}, quote:"Moi, je connais les territoires Remy.", moves:"wauquiez"},</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{name:"Eric Ciotti",<span class="Apple-converted-space">      </span>sprite:"ciotti_front", <span class="Apple-converted-space">  </span>types:["blague"],<span class="Apple-converted-space">      </span>stats:{atk:48,def:65,sp:40,spDef:70,spd:55}, quote:"C'est quand il y en a beaucoup que ca pose des problemes.", moves:"ciotti"},</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{name:"Maite",<span class="Apple-converted-space">            </span>sprite:"maite_front",<span class="Apple-converted-space">    </span>types:["tradition"], <span class="Apple-converted-space">  </span>stats:{atk:55,def:55,sp:68,spDef:55,spd:35}, quote:"Miam miam.", moves:"maite"},</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{name:"L'Edile",<span class="Apple-converted-space">          </span>sprite:"edile_front",<span class="Apple-converted-space">    </span>types:["action"],<span class="Apple-converted-space">      </span>stats:{atk:50,def:60,sp:70,spDef:55,spd:40}, quote:"Brioude ne sera jamais autrement.", moves:"edile"}</p>
-<p class="p1">];</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>COMBAT CORE</p>
-<p class="p1">===================== */</p>
-<p class="p1">function computeDamage(attacker,defender,move){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const cat = move.category || "physical";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!move.power || move.power&lt;=0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return { dmg:0, mult:1, isCrit:false };</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>let atkStat = attacker.atk;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let defStat = defender.def;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// spécial : sp / spDef</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(cat==="special"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>atkStat = attacker.sp;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>defStat = defender.spDef;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// burn : malus uniquement sur le physique (ATK)</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(cat==="physical" &amp;&amp; attacker.status.burn){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>atkStat = Math.floor(atkStat*0.5);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const base=(atkStat/defStat)*move.power;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const randFactor=0.85+Math.random()*0.15;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const mult=typeMultiplier(move.type,defender.types);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const critChance = clamp(0.06 + attacker.spd/220, 0.06, 0.20);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const isCrit = chance(critChance);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>let dmg=Math.max(1,Math.floor(base*randFactor*mult*(isCrit?1.9:1)));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return{ dmg, mult, isCrit };</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function applyDamage(target, amount, opts={}){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>target.hp = clamp(target.hp - amount, 0, target.maxHP);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const isPlayerTarget = (target === player);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const x = isPlayerTarget ? 70 : 240;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const y = isPlayerTarget ? 130 : 70;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(amount&gt;0) addFloatText(String(amount), x, y);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(opts.floatLabel) addFloatText(opts.floatLabel, x, y-12);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function applyEffects(attacker, defender, move, defenderLabel){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const effects = move.effects || [];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(const ef of effects){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(ef.kind==="burn"){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(!defender.status.burn &amp;&amp; chance(ef.chance ?? 1)){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>defender.status.burn=true;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>queueText(defenderLabel+" est brule !");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>setOverlay("burn", defender===player?70:240, defender===player?130:70, 18);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>addFloatText("BRULE", defender===player?70:240, defender===player?118:58);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(ef.kind==="confusion"){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(defender.status.confusion===0 &amp;&amp; chance(ef.chance ?? 1)){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>defender.status.confusion = rand(2,4);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>queueText(defenderLabel+" est confus !");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>setOverlay("confusion", defender===player?70:240, defender===player?130:70, 18);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>addFloatText("CONFUS", defender===player?70:240, defender===player?118:58);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(ef.kind==="sleep"){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(defender.status.sleep===0 &amp;&amp; chance(ef.chance ?? 1)){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const minT = ef.turns?.[0] ?? 1;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const maxT = ef.turns?.[1] ?? minT;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>defender.status.sleep = rand(minT,maxT);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>queueText(defenderLabel+" s'endort !");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>setOverlay("sleep", defender===player?70:240, defender===player?130:70, 18);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>addFloatText("SOMMEIL", defender===player?70:240, defender===player?118:58);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(ef.kind==="heal"){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const v = ef.value ?? 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(v&gt;0){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>attacker.hp = clamp(attacker.hp + v, 0, attacker.maxHP);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>queueText(attacker.name+" recupere "+v+" HP.");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>addFloatText("+HP", attacker===player?70:240, attacker===player?130:70);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>IA ENNEMIE (types + statuts + signature)</p>
-<p class="p1">===================== */</p>
-<p class="p1">function chooseEnemyMove(enemy, player){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let best=null;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let bestScore=-Infinity;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemy.moves.forEach(m=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let score=0;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const mult=typeMultiplier(m.type,player.types);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>score += (mult*25);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>score += (m.power||0);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const effects=m.effects||[];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for(const ef of effects){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(ef.kind==="burn" &amp;&amp; !player.status.burn) score += 10;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(ef.kind==="confusion" &amp;&amp; player.status.confusion===0) score += 8;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(ef.kind==="sleep" &amp;&amp; player.status.sleep===0) score += 14;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(ef.kind==="heal" &amp;&amp; enemy.hp&lt;50) score += 18;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(player.hp&lt;30 &amp;&amp; (m.power||0)&gt;=18) score += 15;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// léger bruit</p>
-<p class="p1"><span class="Apple-converted-space">    </span>score += Math.random()*6;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(score&gt;bestScore){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>bestScore=score;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>best=m;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>return best || enemy.moves[0];</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>INVENTAIRE (BAG)</p>
-<p class="p1">===================== */</p>
-<p class="p1">const BAG = [</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{ key:"potion", name:"Potion", desc:"+20 HP", count:3 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{ key:"antidote", name:"Antidote", desc:"Retire burn", count:2 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{ key:"reveil", name:"Reveil", desc:"Retire sleep", count:2 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{ key:"clarif", name:"Clarificateur", desc:"Retire confusion", count:2 }</p>
-<p class="p1">];</p>
-<p class="p2"><br></p>
-<p class="p1">function bagLabel(it){ return `${it.name} x${it.count}`; }</p>
-<p class="p2"><br></p>
-<p class="p1">function useItem(item){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(item.count&lt;=0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>showText("Plus rien...");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText("Choisis une action.");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>item.count--;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(item.key==="potion"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const before=player.hp;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>player.hp = clamp(player.hp + 20, 0, player.maxHP);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const gain = player.hp - before;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>showText("Remy utilise Potion !");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText(`+${gain} HP.`);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if(item.key==="antidote"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>showText("Remy utilise Antidote !");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(player.status.burn){ player.status.burn=false; queueText("Brulure retiree."); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else queueText("Aucun effet.");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if(item.key==="reveil"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>showText("Remy utilise Reveil !");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(player.status.sleep&gt;0){ player.status.sleep=0; queueText("Sommeil retire."); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else queueText("Aucun effet.");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if(item.key==="clarif"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>showText("Remy utilise Clarificateur !");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(player.status.confusion&gt;0){ player.status.confusion=0; queueText("Confusion retiree."); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else queueText("Aucun effet.");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText("...");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>GAME FLOW</p>
-<p class="p1">===================== */</p>
-<p class="p1">let gameState="TITLE"; // TITLE | FIGHT | ENDING</p>
-<p class="p1">let fightIndex=0;</p>
-<p class="p1">let enemy=null;</p>
-<p class="p2"><br></p>
-<p class="p1">function resetStatuses(f){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>f.status={burn:false,sleep:0,confusion:0};</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function startTitle(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>gameState="TITLE";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>fightIndex=0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemy=null;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=false; UI.menuKind="none";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.items=[]; UI.menuIdx=0; UI.queue=[];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>showText("BRIOUDE 2026\n\na tale of AURA\n\nAppuie sur Entree");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function startEnding(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>gameState="ENDING";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemy=null;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=false; UI.menuKind="none";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.items=[]; UI.menuIdx=0; UI.queue=[];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>showText("Bravo.\n\nMAKE BRIOUDE GREAT AGAIN !\n\nAppuie sur Entree");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function startFight(i){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>fightIndex=i;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const d=CAMPAIGN[i];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemy=createFighter(d.name,d.types,d.stats,d.sprite);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemy.moves = MOVES[d.moves].map(m=&gt;({ ...m }));</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>player.hp=player.maxHP; player.hpVis=player.maxHP;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemy.hp=enemy.maxHP; <span class="Apple-converted-space">  </span>enemy.hpVis=enemy.maxHP;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>resetStatuses(player); resetStatuses(enemy);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>showText("Un adversaire apparait !");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText(d.name+" entre en scene !");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText("Choisis une action.");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>openMenu(["FIGHT","BAG","RUN"],"root");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function endFightWin(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=false; UI.menuKind="none";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>showText(enemy.name+" est hors debat !");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText(CAMPAIGN[fightIndex].quote);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText("Appuie sur Entree.");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function endFightLose(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=false; UI.menuKind="none";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>showText("Remy est a court d'arguments...");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText("Le debat est perdu.");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText("Appuie sur Entree.");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function attemptRun(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>showText("Remy tente de fuir...");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(chance(0.55)){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText("Fuite reussie.");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText("Appuie sur Entree.");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>enemy=null;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>gameState="TITLE_PENDING";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}else{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText("Impossible de fuir !");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText("L'adversaire contre-attaque !");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>enemyTurn();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>TOUR JOUEUR / ENNEMI</p>
-<p class="p1">===================== */</p>
-<p class="p1">function playerUseMove(idx){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!enemy) return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const move=player.moves[idx];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=false; UI.menuKind="none";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!canAct(player)){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(player.hp&lt;=0){ endFightLose(); return; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>burnTick(enemy);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(enemy &amp;&amp; enemy.hp&lt;=0){ endFightWin(); return; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>enemyTurn();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>showText("Remy utilise "+move.name+" !");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>startShake("hit");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.hitAnim.enemy=10;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const {dmg,mult,isCrit} = computeDamage(player,enemy,move);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(isCrit){ queueText("Coup critique !"); flash(3); }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(mult&gt;1) queueText("C'est tres efficace !");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(mult&lt;1) queueText("Ce n'est pas tres efficace...");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(dmg&gt;0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>applyDamage(enemy, dmg);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText(enemy.name+" perd "+dmg+" HP.");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>applyEffects(player, enemy, move, enemy.name);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>burnTick(enemy);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(enemy.hp&lt;=0){ endFightWin(); return; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemyTurn();</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function playerUseBag(idx){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!enemy) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const item=BAG[idx];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>UI.menu=false; UI.menuKind="none";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>useItem(item);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>burnTick(enemy);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(enemy &amp;&amp; enemy.hp&lt;=0){ endFightWin(); return; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>enemyTurn();</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function enemyTurn(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!enemy) return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!canAct(enemy)){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(enemy.hp&lt;=0){ endFightWin(); return; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>burnTick(player);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(player.hp&lt;=0){ endFightLose(); return; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>openMenu(["FIGHT","BAG","RUN"],"root");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const move=chooseEnemyMove(enemy,player);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>queueText(enemy.name+" utilise "+move.name+" !");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>startShake("hit");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.hitAnim.player=10;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const {dmg,mult,isCrit} = computeDamage(enemy,player,move);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(isCrit){ queueText("Coup critique !"); flash(3); }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(mult&gt;1) queueText("C'est tres efficace !");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(mult&lt;1) queueText("Ce n'est pas tres efficace...");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(dmg&gt;0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>applyDamage(player, dmg);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>queueText("Remy perd "+dmg+" HP.");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>applyEffects(enemy, player, move, "Remy");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>burnTick(player);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(player.hp&lt;=0){ endFightLose(); return; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>openMenu(["FIGHT","BAG","RUN"],"root");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>INPUT</p>
-<p class="p1">===================== */</p>
-<p class="p1">document.addEventListener("keydown",e=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.cooldown&gt;0) return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(gameState==="TITLE" &amp;&amp; e.key==="Enter"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>gameState="FIGHT";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>startFight(0);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>UI.cooldown=180;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.text || UI.typing || UI.queue.length){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(e.key==="Enter"){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const progressed = nextText();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(!progressed){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(gameState==="TITLE_PENDING"){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>startTitle();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>UI.cooldown=180;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(gameState==="ENDING"){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>startTitle();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>UI.cooldown=180;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(enemy &amp;&amp; enemy.hp&lt;=0){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>fightIndex++;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>if(fightIndex &lt; CAMPAIGN.length) startFight(fightIndex);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>else startEnding();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>UI.cooldown=180;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(player.hp&lt;=0){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>startTitle();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>UI.cooldown=180;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(gameState==="FIGHT" &amp;&amp; enemy){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>openMenu(["FIGHT","BAG","RUN"],"root");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>UI.cooldown=120;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.menu){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(e.key==="ArrowUp") UI.menuIdx=(UI.menuIdx+UI.items.length-1)%UI.items.length;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(e.key==="ArrowDown") UI.menuIdx=(UI.menuIdx+1)%UI.items.length;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(e.key==="Escape"){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(UI.menuKind!=="root"){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>openMenu(["FIGHT","BAG","RUN"],"root");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>UI.cooldown=120;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(e.key==="Enter"){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(UI.menuKind==="root"){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const pick = UI.items[UI.menuIdx];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(pick==="FIGHT") openMenu(player.moves.map(m=&gt;m.name), "moves");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>else if(pick==="BAG") openMenu(BAG.map(bagLabel), "bag");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>else if(pick==="RUN"){ UI.menu=false; UI.menuKind="none"; attemptRun(); }</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else if(UI.menuKind==="moves"){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>playerUseMove(UI.menuIdx);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else if(UI.menuKind==="bag"){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>playerUseBag(UI.menuIdx);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>UI.cooldown=120;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">});</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>DRAW HELPERS</p>
-<p class="p1">===================== */</p>
-<p class="p1">function drawHPBar(x,y,hpVis,maxHP,w=60,h=5){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const ratio = (maxHP&lt;=0)?0:(hpVis/maxHP);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const filled = Math.floor(w*clamp(ratio,0,1));</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillRect(x-1,y-1,w+2,h+2);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#eee";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillRect(x,y,w,h);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>let col="#2a7";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(filled&lt;14) col="#c22";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>else if(filled&lt;30) col="#ca2";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle=col;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillRect(x,y,filled,h);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function drawSprite(key,x,y,bounce=0){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const img=IMG[key];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(img){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.drawImage(img,x,y-bounce,64,64);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillStyle="#333";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillRect(x,y,64,64);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText(key,x+4,y+16);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function drawOverlay(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!FX.overlay) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const {kind,x,y,t}=FX.overlay;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.textAlign="center";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(kind==="confusion"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const dx = Math.sin(t/3)*4;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText("???", x+dx, y-18);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if(kind==="sleep"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText("Zzz", x, y-18);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if(kind==="burn"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText("🔥", x, y-18);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.textAlign="left";</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function drawFloatTexts(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.textAlign="center";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FX.floatTexts.forEach(ft=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText(ft.text, ft.x, ft.y);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.textAlign="left";</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>TEXTBOX</p>
-<p class="p1">===================== */</p>
-<p class="p1">function drawTextbox(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!UI.text &amp;&amp; !UI.typing &amp;&amp; UI.queue.length===0) return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const x=8,y=168,w=304,h=64;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawBox(x,y,w,h);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const m=boxMetrics(w,h);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const innerX=x+m.padL, innerY=y+m.padT;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const innerW=w-m.padL-m.padR;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.font=FONT_MAIN;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const raw=(UI.visible||UI.text);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const linesRaw=raw.split("\n");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lines=[];</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(const lr of linesRaw){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(!lr){ lines.push(""); continue; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const wrapped = wrapText(lr, innerW, 12);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>wrapped.forEach(s=&gt;lines.push(s));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lineH=14;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(let i=0;i&lt;Math.min(3,lines.length);i++){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawFittedText(lines[i], innerX, innerY + i*lineH, innerW, 12, 9);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>MENU + 2 INFO BOXES</p>
-<p class="p1"><span class="Apple-converted-space">   </span>- gauche: liste</p>
-<p class="p1"><span class="Apple-converted-space">   </span>- droite haut: move/type/cat (ou item)</p>
-<p class="p1"><span class="Apple-converted-space">   </span>- droite bas: stats Remy + ennemi</p>
-<p class="p1">===================== */</p>
-<p class="p1">function statusTag(f){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let s="";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(f.status.burn) s+="B";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(f.status.sleep&gt;0) s+="Z";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(f.status.confusion&gt;0) s+="?";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return s ? (" "+s) : "";</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function catShort(cat){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(cat==="physical") return "PHYS";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(cat==="special")<span class="Apple-converted-space">  </span>return "SPEC";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return "STAT";</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function effShort(move){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const e=move.effects||[];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!e.length) return "-";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const tags=[];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>e.forEach(x=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(x.kind==="burn") tags.push("BRL");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(x.kind==="sleep") tags.push("SLP");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(x.kind==="confusion") tags.push("CNF");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(x.kind==="heal") tags.push("HEAL");</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return tags.join(",");</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function drawMenu(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!UI.menu) return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const y=168, h=64;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const xList=8, wList=200;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const gap=2;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const xInfo=xList+wList+gap;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const wInfo=304-wList-gap;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// 2 petites boxes à droite</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const hTop=30;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const hBot=h-hTop;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// boxes</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawBox(xList,y,wList,h);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawBox(xInfo,y,wInfo,hTop);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawBox(xInfo,y+hTop,wInfo,hBot);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// LIST</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const ml=boxMetrics(wList,h);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lx=xList+ml.padL, ly=y+ml.padT;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lw=wList-ml.padL-ml.padR;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.font="12px monospace";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const curW=10, curH=10;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(let i=0;i&lt;Math.min(4,UI.items.length);i++){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const yy = ly + i*14;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(i===UI.menuIdx){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(IMG.cursor) ctx.drawImage(IMG.cursor, lx, yy-9, curW, curH);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>else ctx.fillText("▶", lx, yy);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawFittedText(UI.items[i], lx+16, yy, lw-16, 12, 9);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// INFO TOP</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const mt=boxMetrics(wInfo,hTop);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const tx=xInfo+mt.padL, ty=y+mt.padT;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const tw=wInfo-mt.padL-mt.padR;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.font="10px monospace";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.menuKind==="moves"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const mv = player.moves[UI.menuIdx];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(mv){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const line1 = `T:${mv.type}<span class="Apple-converted-space">  </span>C:${catShort(mv.category||"physical")}`;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const line2 = `P:${mv.power||0}<span class="Apple-converted-space">  </span>E:${effShort(mv)}`;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>drawFittedText(line1, tx, ty+2, tw, 10, 8);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>drawFittedText(line2, tx, ty+14, tw, 10, 8);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if(UI.menuKind==="bag"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const it = BAG[UI.menuIdx];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(it){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>drawFittedText(it.desc, tx, ty+10, tw, 10, 8);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const pick = UI.items[UI.menuIdx] || "";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hint = (pick==="FIGHT") ? "Choisir attaque" :</p>
-<p class="p1"><span class="Apple-converted-space">                 </span>(pick==="BAG") <span class="Apple-converted-space">  </span>? "Utiliser objet" :</p>
-<p class="p1"><span class="Apple-converted-space">                 </span>(pick==="RUN") <span class="Apple-converted-space">  </span>? "Tenter fuite" <span class="Apple-converted-space">  </span>: "";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawFittedText(hint, tx, ty+10, tw, 10, 8);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// INFO BOTTOM (STATS)</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const mb=boxMetrics(wInfo,hBot);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sx=xInfo+mb.padL, sy=y+hTop+mb.padT;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sw=wInfo-mb.padL-mb.padR;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.font="9px monospace";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const pLine = `R A${player.atk} D${player.def} S${player.sp} V${player.spd}${statusTag(player)}`;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const eLine = enemy</p>
-<p class="p1"><span class="Apple-converted-space">    </span>? `E A${enemy.atk} D${enemy.def} S${enemy.sp} V${enemy.spd}${statusTag(enemy)}`</p>
-<p class="p1"><span class="Apple-converted-space">    </span>: `E -`;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawFittedText(pLine, sx, sy+2, sw, 9, 7);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawFittedText(eLine, sx, sy+14, sw, 9, 7);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>BATTLE SCENE</p>
-<p class="p1">===================== */</p>
-<p class="p1">function drawBattle(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(IMG.battle) ctx.drawImage(IMG.battle,0,0,W,H);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>else{ ctx.fillStyle="#e9e2b8"; ctx.fillRect(0,0,W,H); }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const enemyBounce = FX.hitAnim.enemy&gt;0 ? (FX.hitAnim.enemy%2?2:1) : 0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const playerBounce = FX.hitAnim.player&gt;0 ? (FX.hitAnim.player%2?2:1) : 0;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(enemy) drawSprite(enemy.sprite, 210, 40, enemyBounce);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawSprite(player.sprite, 40, 110, playerBounce);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// HUD enemy</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(enemy){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const bx=12, by=10, bw=178, bh=60;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawBox(bx,by,bw,bh);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const m=boxMetrics(bw,bh);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const ix=bx+m.padL, iy=by+m.padT, iw=bw-m.padL-m.padR;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawFittedText(enemy.name, ix, iy+2, iw, 11, 8);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawFittedText(enemy.types.join(" / "), ix, iy+14, iw, 10, 8);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const barY = iy+22;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawHPBar(ix, barY, enemy.hpVis, enemy.maxHP, 70, 5);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.font="10px monospace";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText(`HP ${Math.round(enemy.hpVis)}/${enemy.maxHP}`, ix, barY+16);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// HUD player</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const pbx=138, pby=108, pbw=174, pbh=64;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawBox(pbx,pby,pbw,pbh);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const m=boxMetrics(pbw,pbh);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const ix=pbx+m.padL, iy=pby+m.padT, iw=pbw-m.padL-m.padR;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawFittedText("Remy", ix, iy+2, iw, 11, 8);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawFittedText(player.types.join(" / "), ix, iy+14, iw, 10, 8);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const barY=iy+22;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawHPBar(ix, barY, player.hpVis, player.maxHP, 70, 5);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.font="10px monospace";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText(`HP ${Math.round(player.hpVis)}/${player.maxHP}`, ix, barY+16);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawOverlay();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>drawFloatTexts();</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>LOOP</p>
-<p class="p1">===================== */</p>
-<p class="p1">let last=performance.now();</p>
-<p class="p2"><br></p>
-<p class="p1">function updateHpVisuals(dt){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const speed = 90 * (dt/1000);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const stepToward = (cur, target) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(Math.abs(cur-target) &lt; 0.2) return target;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(cur &lt; target) return Math.min(target, cur + speed);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return Math.max(target, cur - speed);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>player.hpVis = stepToward(player.hpVis, player.hp);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(enemy) enemy.hpVis = stepToward(enemy.hpVis, enemy.hp);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function loop(now){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const dt=now-last; last=now;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(UI.cooldown&gt;0) UI.cooldown-=dt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>updateText(dt);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>updateFX();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>updateHpVisuals(dt);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.save();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.translate(FX.shakeX, FX.shakeY);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.font=FONT_MAIN;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(gameState==="TITLE" || gameState==="ENDING"){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillStyle="#f3f0da";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillRect(0,0,W,H);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillStyle="#111";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.textAlign="center";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText("BRIOUDE 2026",160,80);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillText("a tale of AURA",160,96);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.textAlign="left";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawTextbox();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>drawBattle();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(UI.text || UI.typing || UI.queue.length) drawTextbox();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else drawMenu();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx.restore();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(FX.flashFrames&gt;0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillStyle="rgba(255,255,255,0.6)";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>ctx.fillRect(0,0,W,H);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>requestAnimationFrame(loop);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* =====================</p>
-<p class="p1"><span class="Apple-converted-space">   </span>BOOT</p>
-<p class="p1">===================== */</p>
-<p class="p1">preloadAssets(()=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(IMG.textbox){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>UI_SKIN.slice = detectNineSlice(IMG.textbox);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>startTitle();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>requestAnimationFrame(loop);</p>
-<p class="p1">});</p>
-<p class="p2"><br></p>
-<p class="p1">})();</p>
-<p class="p1">&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+<canvas id="game" width="320" height="240"></canvas>
+
+<script>
+(()=>{
+
+/* =====================
+   CANVAS
+===================== */
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+ctx.textBaseline="alphabetic";
+const W=canvas.width,H=canvas.height;
+
+const FONT_MAIN = "12px monospace";
+
+/* =====================
+   ASSETS
+===================== */
+const ASSETS={
+  sprites:{
+    remy_back:"remy_back.png",
+    wauquiez_front:"wauquiez_front.png",
+    ciotti_front:"ciotti_front.png",
+    maite_front:"maite_front.png",
+    edile_front:"edile_front.png"
+  },
+  background:{ battle:"battle_bg.png" },
+  ui:{ cursor:"cursor.png", textbox:"textbox.png" }
+};
+
+const IMG={};
+function preloadAssets(done){
+  const list=[];
+  Object.values(ASSETS).forEach(group=>{
+    Object.entries(group).forEach(([k,src])=>list.push([k,src]));
+  });
+  if(list.length===0){ done(); return; }
+
+  let loaded=0;
+  list.forEach(([k,src])=>{
+    const i=new Image();
+    i.onload=()=>{ IMG[k]=i; if(++loaded===list.length) done(); };
+    i.onerror=()=>{ console.warn("Missing:",src); if(++loaded===list.length) done(); };
+    i.src=src;
+  });
+}
+
+/* =====================
+   UTILS
+===================== */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const chance=p=>Math.random()<p;
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+/* =====================
+   FX (ANIMS)
+===================== */
+const FX={
+  shakeX:0, shakeY:0, shakeFrames:0,
+  flashFrames:0,
+  overlay:null,   // {kind,x,y,t,frames}
+  floatTexts:[],  // [{text,x,y,vy,frames}]
+  hitAnim:{ player:0, enemy:0 } // bounce timer
+};
+
+function startShake(kind="hit"){
+  FX.shakeFrames = (kind==="heavy") ? 10 : 6;
+}
+function flash(frames=2){
+  FX.flashFrames = Math.max(FX.flashFrames, frames);
+}
+function setOverlay(kind,x,y,frames=18){
+  FX.overlay = {kind,x,y,t:0,frames};
+}
+function addFloatText(text,x,y){
+  FX.floatTexts.push({text,x,y,vy:-0.25,frames:42});
+}
+
+function updateFX(){
+  if(FX.shakeFrames>0){
+    FX.shakeX=(Math.random()-0.5)*6;
+    FX.shakeY=(Math.random()-0.5)*4;
+    FX.shakeFrames--;
+  } else {
+    FX.shakeX=FX.shakeY=0;
+  }
+
+  if(FX.flashFrames>0) FX.flashFrames--;
+
+  if(FX.overlay){
+    FX.overlay.t++;
+    FX.overlay.frames--;
+    if(FX.overlay.frames<=0) FX.overlay=null;
+  }
+
+  FX.floatTexts.forEach(ft=>{
+    ft.y += ft.vy;
+    ft.frames--;
+  });
+  FX.floatTexts = FX.floatTexts.filter(ft=>ft.frames>0);
+
+  if(FX.hitAnim.player>0) FX.hitAnim.player--;
+  if(FX.hitAnim.enemy>0) FX.hitAnim.enemy--;
+}
+
+/* =====================
+   TYPES
+===================== */
+const TYPE_CHART={
+  action:{ blague:2, parisianisme:0.5 },
+  blague:{ parisianisme:2, recherche:0.5 },
+  recherche:{ blague:2, parisianisme:0.5 },
+  parisianisme:{ action:2, tradition:0.5 },
+  tradition:{ parisianisme:2, recherche:0.5 }
+};
+
+function typeMultiplier(atkType,defTypes){
+  let m=1;
+  defTypes.forEach(t=>{
+    const v=TYPE_CHART[atkType]?.[t];
+    if(v) m*=v;
+  });
+  return m;
+}
+
+/* =====================
+   UI TEXTE / MENU
+===================== */
+const UI={
+  text:"",visible:"",idx:0,typing:false,timer:0,
+  queue:[],
+  menu:false,items:[],menuIdx:0,menuKind:"none",
+  cooldown:0
+};
+
+function showText(t){
+  UI.text=t;UI.visible="";UI.idx=0;
+  UI.typing=true;UI.timer=0;
+  UI.menu=false; UI.menuKind="none";
+}
+function queueText(t){ UI.queue.push(t); }
+function updateText(dt){
+  if(!UI.typing) return;
+  UI.timer+=dt;
+  while(UI.timer>22 && UI.idx<UI.text.length){
+    UI.visible+=UI.text[UI.idx++];
+    UI.timer-=22;
+  }
+  if(UI.idx>=UI.text.length) UI.typing=false;
+}
+function nextText(){
+  if(UI.typing){ UI.visible=UI.text; UI.typing=false; return true; }
+  if(UI.queue.length){ showText(UI.queue.shift()); return true; }
+  UI.text=""; UI.visible="";
+  return false;
+}
+function openMenu(items, kind){
+  UI.menu=true; UI.items=items; UI.menuIdx=0;
+  UI.menuKind = kind || "root";
+}
+
+/* =====================
+   9-SLICE TEXTBOX (anti-déformation)
+===================== */
+const UI_SKIN = { slice:null };
+
+function detectNineSlice(img){
+  // textbox UNI => ce détecteur fonctionne très bien.
+  try{
+    const w=img.naturalWidth||img.width;
+    const h=img.naturalHeight||img.height;
+
+    const oc=document.createElement("canvas");
+    oc.width=w; oc.height=h;
+    const octx=oc.getContext("2d",{willReadFrequently:true});
+    octx.imageSmoothingEnabled=false;
+    octx.drawImage(img,0,0);
+    const d=octx.getImageData(0,0,w,h).data;
+
+    const get=(x,y)=>{
+      const i=(y*w+x)*4;
+      return [d[i],d[i+1],d[i+2],d[i+3]];
+    };
+
+    const cx=(w/2)|0, cy=(h/2)|0;
+
+    // centre : couleur de référence
+    let sr=0,sg=0,sb=0,c=0;
+    for(let yy=cy-2; yy<=cy+2; yy++){
+      for(let xx=cx-2; xx<=cx+2; xx++){
+        const p=get(clamp(xx,0,w-1),clamp(yy,0,h-1));
+        if(p[3]>0){ sr+=p[0]; sg+=p[1]; sb+=p[2]; c++; }
+      }
+    }
+    if(c===0) return {l:24,r:24,t:24,b:24};
+    const center=[(sr/c)|0,(sg/c)|0,(sb/c)|0];
+
+    const dist=(p)=> Math.abs(p[0]-center[0])+Math.abs(p[1]-center[1])+Math.abs(p[2]-center[2]);
+    const tol=90;
+
+    let l=0; for(let x=0; x<cx; x++){ const p=get(x,cy); if(p[3]>0 && dist(p)<tol){ l=x; break; } }
+    let r=0; for(let x=w-1; x>cx; x--){ const p=get(x,cy); if(p[3]>0 && dist(p)<tol){ r=(w-1-x); break; } }
+    let t=0; for(let y=0; y<cy; y++){ const p=get(cx,y); if(p[3]>0 && dist(p)<tol){ t=y; break; } }
+    let b=0; for(let y=h-1; y>cy; y--){ const p=get(cx,y); if(p[3]>0 && dist(p)<tol){ b=(h-1-y); break; } }
+
+    const max=Math.floor(Math.min(w,h)/3);
+    l=clamp(l,8,max); r=clamp(r,8,max); t=clamp(t,8,max); b=clamp(b,8,max);
+    return {l,r,t,b};
+  }catch(e){
+    return {l:24,r:24,t:24,b:24};
+  }
+}
+
+function boxMetrics(w,h){
+  const img=IMG.textbox;
+  if(!img || !UI_SKIN.slice) return {dl:6,dr:6,dt:6,db:6,padL:12,padT:14,padR:12,padB:12};
+
+  const iw=img.naturalWidth||img.width;
+  const ih=img.naturalHeight||img.height;
+
+  const sx=w/iw;
+  const sy=h/ih;
+
+  let dl=Math.max(2, Math.round(UI_SKIN.slice.l*sx));
+  let dr=Math.max(2, Math.round(UI_SKIN.slice.r*sx));
+  let dt=Math.max(2, Math.round(UI_SKIN.slice.t*sy));
+  let db=Math.max(2, Math.round(UI_SKIN.slice.b*sy));
+
+  const fitLR = (w-2);
+  if(dl+dr>fitLR){
+    const k=fitLR/(dl+dr);
+    dl=Math.max(1, (dl*k)|0);
+    dr=Math.max(1, (dr*k)|0);
+  }
+  const fitTB = (h-2);
+  if(dt+db>fitTB){
+    const k=fitTB/(dt+db);
+    dt=Math.max(1, (dt*k)|0);
+    db=Math.max(1, (db*k)|0);
+  }
+
+  const padL = dl + 8;
+  const padR = dr + 8;
+  const padT = dt + 10;
+  const padB = db + 8;
+
+  return {dl,dr,dt,db,padL,padT,padR,padB};
+}
+
+function drawNineSlice(img,x,y,w,h){
+  const iw=img.naturalWidth||img.width;
+  const ih=img.naturalHeight||img.height;
+  const s=UI_SKIN.slice || {l:24,r:24,t:24,b:24};
+
+  const m=boxMetrics(w,h);
+  const dl=m.dl, dr=m.dr, dt=m.dt, db=m.db;
+
+  const sl=s.l, sr=s.r, st=s.t, sb=s.b;
+  const smw = Math.max(0, iw - sl - sr);
+  const smh = Math.max(0, ih - st - sb);
+
+  const dmw = Math.max(0, w - dl - dr);
+  const dmh = Math.max(0, h - dt - db);
+
+  ctx.drawImage(img, 0,0, sl,st, x,y, dl,dt);
+  ctx.drawImage(img, sl,0, smw,st, x+dl,y, dmw,dt);
+  ctx.drawImage(img, iw-sr,0, sr,st, x+w-dr,y, dr,dt);
+
+  ctx.drawImage(img, 0,st, sl,smh, x,y+dt, dl,dmh);
+  ctx.drawImage(img, sl,st, smw,smh, x+dl,y+dt, dmw,dmh);
+  ctx.drawImage(img, iw-sr,st, sr,smh, x+w-dr,y+dt, dr,dmh);
+
+  ctx.drawImage(img, 0,ih-sb, sl,sb, x,y+h-db, dl,db);
+  ctx.drawImage(img, sl,ih-sb, smw,sb, x+dl,y+h-db, dmw,db);
+  ctx.drawImage(img, iw-sr,ih-sb, sr,sb, x+w-dr,y+h-db, dr,db);
+}
+
+function drawBox(x,y,w,h){
+  if(IMG.textbox && UI_SKIN.slice){
+    drawNineSlice(IMG.textbox,x,y,w,h);
+    return;
+  }
+  ctx.fillStyle="#f8f8f8";
+  ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle="#111";
+  ctx.strokeRect(x,y,w,h);
+}
+
+/* =====================
+   TEXT FIT
+===================== */
+function setFont(px){ ctx.font = `${px}px monospace`; }
+
+function drawFittedText(text, x, y, maxW, basePx, minPx=8){
+  let px=basePx;
+  while(px>minPx){
+    setFont(px);
+    if(ctx.measureText(text).width <= maxW) break;
+    px--;
+  }
+  ctx.fillText(text,x,y);
+}
+
+function wrapText(text, maxW, basePx){
+  setFont(basePx);
+  const words = text.split(/\s+/);
+  const lines=[];
+  let line="";
+  for(const w of words){
+    const test = line ? (line+" "+w) : w;
+    if(ctx.measureText(test).width <= maxW){
+      line=test;
+    }else{
+      if(line) lines.push(line);
+      line=w;
+    }
+  }
+  if(line) lines.push(line);
+  return lines;
+}
+
+/* =====================
+   FIGHTERS (stats Pokemon-like)
+===================== */
+function createFighter(name,types,stats,sprite){
+  const atk = stats.atk ?? 50;
+  const def = stats.def ?? 50;
+  const sp  = stats.sp  ?? atk;   // fallback = pas de régression
+  const spDef = stats.spDef ?? def;
+  const spd = stats.spd ?? 50;
+
+  return{
+    name,types,sprite,
+    maxHP:100,
+    hp:100,
+    hpVis:100,
+    atk, def, sp, spDef, spd,
+    status:{ burn:false, sleep:0, confusion:0 },
+    moves:[]
+  };
+}
+
+/* =====================
+   STATUTS
+===================== */
+function canAct(f){
+  if(f.status.sleep>0){
+    f.status.sleep--;
+    queueText(f.name+" dort...");
+    setOverlay("sleep", f===player?70:240, f===player?130:70, 18);
+    return false;
+  }
+  if(f.status.confusion>0){
+    f.status.confusion--;
+    queueText(f.name+" est confus...");
+    setOverlay("confusion", f===player?70:240, f===player?130:70, 18);
+    if(chance(0.5)){
+      const dmg=Math.max(1,Math.floor(f.maxHP*0.08));
+      applyDamage(f, dmg, {floatLabel:"-CONFUSION"});
+      queueText("Il se blesse dans sa confusion !");
+      return false;
+    }
+  }
+  return true;
+}
+
+function burnTick(f){
+  if(!f.status.burn) return;
+  const dmg=Math.max(1,Math.floor(f.maxHP*0.06));
+  queueText(f.name+" souffre de sa brulure !");
+  setOverlay("burn", f===player?70:240, f===player?130:70, 18);
+  applyDamage(f, dmg, {floatLabel:"-BRULURE"});
+}
+
+/* =====================
+   MOVES (signature + catégories)
+   category: "physical" | "special" | "status"
+===================== */
+const MOVES = {
+  remy: [
+    {name:"Cahier de recherche", power:24, type:"recherche", category:"special"},
+    {name:"Plaidoyer", power:18, type:"action", category:"special", effects:[{kind:"confusion", chance:0.40}]},
+    {name:"Bourree auvergnate", power:28, type:"tradition", category:"special"},
+    {name:"Second degre", power:20, type:"blague", category:"physical", effects:[{kind:"burn", chance:0.30}]}
+  ],
+  wauquiez: [
+    {name:"Dotations publiques", power:14, type:"action", category:"status", effects:[{kind:"sleep", chance:0.45, turns:[1,2]}]},
+    {name:"Mauvaise foi", power:22, type:"blague", category:"physical"},
+    {name:"Ce que les francais veulent", power:20, type:"parisianisme", category:"special", effects:[{kind:"confusion", chance:0.35}]},
+    {name:"Bottes en caoutchouc", power:24, type:"tradition", category:"physical", effects:[{kind:"burn", chance:0.20}]}
+  ],
+  ciotti: [
+    {name:"Retranchement", power:0, type:"parisianisme", category:"status", effects:[{kind:"sleep", chance:0.20, turns:[1,1]}]},
+    {name:"Accent chantant", power:22, type:"tradition", category:"physical"},
+    {name:"Chauvinisme", power:18, type:"parisianisme", category:"status", effects:[{kind:"confusion", chance:0.25}]},
+    {name:"UDR", power:20, type:"blague", category:"physical", effects:[{kind:"burn", chance:0.20}]}
+  ],
+  maite: [
+    {name:"Ortolan", power:0, type:"tradition", category:"status", effects:[{kind:"heal", value:22}]},
+    {name:"Aiguille", power:22, type:"tradition", category:"special", effects:[{kind:"confusion", chance:0.35}]},
+    {name:"Icone", power:20, type:"blague", category:"special"},
+    {name:"Indigestion", power:26, type:"tradition", category:"special", effects:[{kind:"sleep", chance:0.25, turns:[1,2]}]}
+  ],
+  edile: [
+    {name:"Conseil municipal", power:22, type:"action", category:"special"},
+    {name:"Clientelisme", power:18, type:"action", category:"special", effects:[{kind:"burn", chance:0.15}]},
+    {name:"Monsieur le maire", power:0, type:"action", category:"status", effects:[{kind:"confusion", chance:0.25}]},
+    {name:"Bon sens paysan", power:22, type:"tradition", category:"physical", effects:[{kind:"confusion", chance:0.25}]}
+  ]
+};
+
+/* =====================
+   DATA
+===================== */
+const player=createFighter(
+  "Remy",
+  ["recherche","blague"],
+  {atk:55,def:50,sp:65,spDef:55,spd:60},
+  "remy_back"
+);
+player.moves = MOVES.remy.map(m=>({ ...m }));
+
+const CAMPAIGN=[
+  {name:"Laurent Wauquiez", sprite:"wauquiez_front", types:["parisianisme"], stats:{atk:60,def:45,sp:58,spDef:46,spd:50}, quote:"Moi, je connais les territoires Remy.", moves:"wauquiez"},
+  {name:"Eric Ciotti",      sprite:"ciotti_front",   types:["blague"],      stats:{atk:48,def:65,sp:40,spDef:70,spd:55}, quote:"C'est quand il y en a beaucoup que ca pose des problemes.", moves:"ciotti"},
+  {name:"Maite",            sprite:"maite_front",    types:["tradition"],   stats:{atk:55,def:55,sp:68,spDef:55,spd:35}, quote:"Miam miam.", moves:"maite"},
+  {name:"L'Edile",          sprite:"edile_front",    types:["action"],      stats:{atk:50,def:60,sp:70,spDef:55,spd:40}, quote:"Brioude ne sera jamais autrement.", moves:"edile"}
+];
+
+/* =====================
+   COMBAT CORE
+===================== */
+function computeDamage(attacker,defender,move){
+  const cat = move.category || "physical";
+
+  if(!move.power || move.power<=0){
+    return { dmg:0, mult:1, isCrit:false };
+  }
+
+  let atkStat = attacker.atk;
+  let defStat = defender.def;
+
+  // spécial : sp / spDef
+  if(cat==="special"){
+    atkStat = attacker.sp;
+    defStat = defender.spDef;
+  }
+
+  // burn : malus uniquement sur le physique (ATK)
+  if(cat==="physical" && attacker.status.burn){
+    atkStat = Math.floor(atkStat*0.5);
+  }
+
+  const base=(atkStat/defStat)*move.power;
+  const randFactor=0.85+Math.random()*0.15;
+  const mult=typeMultiplier(move.type,defender.types);
+
+  const critChance = clamp(0.06 + attacker.spd/220, 0.06, 0.20);
+  const isCrit = chance(critChance);
+
+  let dmg=Math.max(1,Math.floor(base*randFactor*mult*(isCrit?1.9:1)));
+  return{ dmg, mult, isCrit };
+}
+
+function applyDamage(target, amount, opts={}){
+  target.hp = clamp(target.hp - amount, 0, target.maxHP);
+
+  const isPlayerTarget = (target === player);
+  const x = isPlayerTarget ? 70 : 240;
+  const y = isPlayerTarget ? 130 : 70;
+
+  if(amount>0) addFloatText(String(amount), x, y);
+  if(opts.floatLabel) addFloatText(opts.floatLabel, x, y-12);
+}
+
+function applyEffects(attacker, defender, move, defenderLabel){
+  const effects = move.effects || [];
+  for(const ef of effects){
+    if(ef.kind==="burn"){
+      if(!defender.status.burn && chance(ef.chance ?? 1)){
+        defender.status.burn=true;
+        queueText(defenderLabel+" est brule !");
+        setOverlay("burn", defender===player?70:240, defender===player?130:70, 18);
+        addFloatText("BRULE", defender===player?70:240, defender===player?118:58);
+      }
+    }
+    if(ef.kind==="confusion"){
+      if(defender.status.confusion===0 && chance(ef.chance ?? 1)){
+        defender.status.confusion = rand(2,4);
+        queueText(defenderLabel+" est confus !");
+        setOverlay("confusion", defender===player?70:240, defender===player?130:70, 18);
+        addFloatText("CONFUS", defender===player?70:240, defender===player?118:58);
+      }
+    }
+    if(ef.kind==="sleep"){
+      if(defender.status.sleep===0 && chance(ef.chance ?? 1)){
+        const minT = ef.turns?.[0] ?? 1;
+        const maxT = ef.turns?.[1] ?? minT;
+        defender.status.sleep = rand(minT,maxT);
+        queueText(defenderLabel+" s'endort !");
+        setOverlay("sleep", defender===player?70:240, defender===player?130:70, 18);
+        addFloatText("SOMMEIL", defender===player?70:240, defender===player?118:58);
+      }
+    }
+    if(ef.kind==="heal"){
+      const v = ef.value ?? 0;
+      if(v>0){
+        attacker.hp = clamp(attacker.hp + v, 0, attacker.maxHP);
+        queueText(attacker.name+" recupere "+v+" HP.");
+        addFloatText("+HP", attacker===player?70:240, attacker===player?130:70);
+      }
+    }
+  }
+}
+
+/* =====================
+   IA ENNEMIE (types + statuts + signature)
+===================== */
+function chooseEnemyMove(enemy, player){
+  let best=null;
+  let bestScore=-Infinity;
+
+  enemy.moves.forEach(m=>{
+    let score=0;
+
+    const mult=typeMultiplier(m.type,player.types);
+    score += (mult*25);
+
+    score += (m.power||0);
+
+    const effects=m.effects||[];
+    for(const ef of effects){
+      if(ef.kind==="burn" && !player.status.burn) score += 10;
+      if(ef.kind==="confusion" && player.status.confusion===0) score += 8;
+      if(ef.kind==="sleep" && player.status.sleep===0) score += 14;
+      if(ef.kind==="heal" && enemy.hp<50) score += 18;
+    }
+
+    if(player.hp<30 && (m.power||0)>=18) score += 15;
+
+    // léger bruit
+    score += Math.random()*6;
+
+    if(score>bestScore){
+      bestScore=score;
+      best=m;
+    }
+  });
+
+  return best || enemy.moves[0];
+}
+
+/* =====================
+   INVENTAIRE (BAG)
+===================== */
+const BAG = [
+  { key:"potion", name:"Potion", desc:"+20 HP", count:3 },
+  { key:"antidote", name:"Antidote", desc:"Retire burn", count:2 },
+  { key:"reveil", name:"Reveil", desc:"Retire sleep", count:2 },
+  { key:"clarif", name:"Clarificateur", desc:"Retire confusion", count:2 }
+];
+
+function bagLabel(it){ return `${it.name} x${it.count}`; }
+
+function useItem(item){
+  if(item.count<=0){
+    showText("Plus rien...");
+    queueText("Choisis une action.");
+    return;
+  }
+  item.count--;
+
+  if(item.key==="potion"){
+    const before=player.hp;
+    player.hp = clamp(player.hp + 20, 0, player.maxHP);
+    const gain = player.hp - before;
+    showText("Remy utilise Potion !");
+    queueText(`+${gain} HP.`);
+  } else if(item.key==="antidote"){
+    showText("Remy utilise Antidote !");
+    if(player.status.burn){ player.status.burn=false; queueText("Brulure retiree."); }
+    else queueText("Aucun effet.");
+  } else if(item.key==="reveil"){
+    showText("Remy utilise Reveil !");
+    if(player.status.sleep>0){ player.status.sleep=0; queueText("Sommeil retire."); }
+    else queueText("Aucun effet.");
+  } else if(item.key==="clarif"){
+    showText("Remy utilise Clarificateur !");
+    if(player.status.confusion>0){ player.status.confusion=0; queueText("Confusion retiree."); }
+    else queueText("Aucun effet.");
+  }
+
+  queueText("...");
+}
+
+/* =====================
+   GAME FLOW
+===================== */
+let gameState="TITLE"; // TITLE | FIGHT | ENDING
+let fightIndex=0;
+let enemy=null;
+
+function resetStatuses(f){
+  f.status={burn:false,sleep:0,confusion:0};
+}
+
+function startTitle(){
+  gameState="TITLE";
+  fightIndex=0;
+  enemy=null;
+  UI.menu=false; UI.menuKind="none";
+  UI.items=[]; UI.menuIdx=0; UI.queue=[];
+  showText("BRIOUDE 2026\n\na tale of AURA\n\nAppuie sur Entree");
+}
+
+function startEnding(){
+  gameState="ENDING";
+  enemy=null;
+  UI.menu=false; UI.menuKind="none";
+  UI.items=[]; UI.menuIdx=0; UI.queue=[];
+  showText("Bravo.\n\nMAKE BRIOUDE GREAT AGAIN !\n\nAppuie sur Entree");
+}
+
+function startFight(i){
+  fightIndex=i;
+  const d=CAMPAIGN[i];
+  enemy=createFighter(d.name,d.types,d.stats,d.sprite);
+  enemy.moves = MOVES[d.moves].map(m=>({ ...m }));
+
+  player.hp=player.maxHP; player.hpVis=player.maxHP;
+  enemy.hp=enemy.maxHP;   enemy.hpVis=enemy.maxHP;
+  resetStatuses(player); resetStatuses(enemy);
+
+  showText("Un adversaire apparait !");
+  queueText(d.name+" entre en scene !");
+  queueText("Choisis une action.");
+  openMenu(["FIGHT","BAG","RUN"],"root");
+}
+
+function endFightWin(){
+  UI.menu=false; UI.menuKind="none";
+  showText(enemy.name+" est hors debat !");
+  queueText(CAMPAIGN[fightIndex].quote);
+  queueText("Appuie sur Entree.");
+}
+
+function endFightLose(){
+  UI.menu=false; UI.menuKind="none";
+  showText("Remy est a court d'arguments...");
+  queueText("Le debat est perdu.");
+  queueText("Appuie sur Entree.");
+}
+
+function attemptRun(){
+  showText("Remy tente de fuir...");
+  if(chance(0.55)){
+    queueText("Fuite reussie.");
+    queueText("Appuie sur Entree.");
+    enemy=null;
+    gameState="TITLE_PENDING";
+  }else{
+    queueText("Impossible de fuir !");
+    queueText("L'adversaire contre-attaque !");
+    enemyTurn();
+  }
+}
+
+/* =====================
+   TOUR JOUEUR / ENNEMI
+===================== */
+function playerUseMove(idx){
+  if(!enemy) return;
+
+  const move=player.moves[idx];
+  UI.menu=false; UI.menuKind="none";
+
+  if(!canAct(player)){
+    if(player.hp<=0){ endFightLose(); return; }
+    burnTick(enemy);
+    if(enemy && enemy.hp<=0){ endFightWin(); return; }
+    enemyTurn();
+    return;
+  }
+
+  showText("Remy utilise "+move.name+" !");
+  startShake("hit");
+  FX.hitAnim.enemy=10;
+
+  const {dmg,mult,isCrit} = computeDamage(player,enemy,move);
+
+  if(isCrit){ queueText("Coup critique !"); flash(3); }
+  if(mult>1) queueText("C'est tres efficace !");
+  if(mult<1) queueText("Ce n'est pas tres efficace...");
+
+  if(dmg>0){
+    applyDamage(enemy, dmg);
+    queueText(enemy.name+" perd "+dmg+" HP.");
+  }
+
+  applyEffects(player, enemy, move, enemy.name);
+
+  burnTick(enemy);
+
+  if(enemy.hp<=0){ endFightWin(); return; }
+  enemyTurn();
+}
+
+function playerUseBag(idx){
+  if(!enemy) return;
+  const item=BAG[idx];
+  UI.menu=false; UI.menuKind="none";
+
+  useItem(item);
+
+  burnTick(enemy);
+  if(enemy && enemy.hp<=0){ endFightWin(); return; }
+
+  enemyTurn();
+}
+
+function enemyTurn(){
+  if(!enemy) return;
+
+  if(!canAct(enemy)){
+    if(enemy.hp<=0){ endFightWin(); return; }
+    burnTick(player);
+    if(player.hp<=0){ endFightLose(); return; }
+    openMenu(["FIGHT","BAG","RUN"],"root");
+    return;
+  }
+
+  const move=chooseEnemyMove(enemy,player);
+  queueText(enemy.name+" utilise "+move.name+" !");
+
+  startShake("hit");
+  FX.hitAnim.player=10;
+
+  const {dmg,mult,isCrit} = computeDamage(enemy,player,move);
+
+  if(isCrit){ queueText("Coup critique !"); flash(3); }
+  if(mult>1) queueText("C'est tres efficace !");
+  if(mult<1) queueText("Ce n'est pas tres efficace...");
+
+  if(dmg>0){
+    applyDamage(player, dmg);
+    queueText("Remy perd "+dmg+" HP.");
+  }
+
+  applyEffects(enemy, player, move, "Remy");
+
+  burnTick(player);
+
+  if(player.hp<=0){ endFightLose(); return; }
+  openMenu(["FIGHT","BAG","RUN"],"root");
+}
+
+/* =====================
+   INPUT
+===================== */
+document.addEventListener("keydown",e=>{
+  if(UI.cooldown>0) return;
+
+  if(gameState==="TITLE" && e.key==="Enter"){
+    gameState="FIGHT";
+    startFight(0);
+    UI.cooldown=180;
+    return;
+  }
+
+  if(UI.text || UI.typing || UI.queue.length){
+    if(e.key==="Enter"){
+      const progressed = nextText();
+
+      if(!progressed){
+        if(gameState==="TITLE_PENDING"){
+          startTitle();
+          UI.cooldown=180;
+          return;
+        }
+
+        if(gameState==="ENDING"){
+          startTitle();
+          UI.cooldown=180;
+          return;
+        }
+
+        if(enemy && enemy.hp<=0){
+          fightIndex++;
+          if(fightIndex < CAMPAIGN.length) startFight(fightIndex);
+          else startEnding();
+          UI.cooldown=180;
+          return;
+        }
+
+        if(player.hp<=0){
+          startTitle();
+          UI.cooldown=180;
+          return;
+        }
+
+        if(gameState==="FIGHT" && enemy){
+          openMenu(["FIGHT","BAG","RUN"],"root");
+        }
+      }
+
+      UI.cooldown=120;
+    }
+    return;
+  }
+
+  if(UI.menu){
+    if(e.key==="ArrowUp") UI.menuIdx=(UI.menuIdx+UI.items.length-1)%UI.items.length;
+    if(e.key==="ArrowDown") UI.menuIdx=(UI.menuIdx+1)%UI.items.length;
+
+    if(e.key==="Escape"){
+      if(UI.menuKind!=="root"){
+        openMenu(["FIGHT","BAG","RUN"],"root");
+        UI.cooldown=120;
+      }
+      return;
+    }
+
+    if(e.key==="Enter"){
+      if(UI.menuKind==="root"){
+        const pick = UI.items[UI.menuIdx];
+        if(pick==="FIGHT") openMenu(player.moves.map(m=>m.name), "moves");
+        else if(pick==="BAG") openMenu(BAG.map(bagLabel), "bag");
+        else if(pick==="RUN"){ UI.menu=false; UI.menuKind="none"; attemptRun(); }
+      } else if(UI.menuKind==="moves"){
+        playerUseMove(UI.menuIdx);
+      } else if(UI.menuKind==="bag"){
+        playerUseBag(UI.menuIdx);
+      }
+      UI.cooldown=120;
+    }
+  }
+});
+
+/* =====================
+   DRAW HELPERS
+===================== */
+function drawHPBar(x,y,hpVis,maxHP,w=60,h=5){
+  const ratio = (maxHP<=0)?0:(hpVis/maxHP);
+  const filled = Math.floor(w*clamp(ratio,0,1));
+
+  ctx.fillStyle="#111";
+  ctx.fillRect(x-1,y-1,w+2,h+2);
+  ctx.fillStyle="#eee";
+  ctx.fillRect(x,y,w,h);
+
+  let col="#2a7";
+  if(filled<14) col="#c22";
+  else if(filled<30) col="#ca2";
+
+  ctx.fillStyle=col;
+  ctx.fillRect(x,y,filled,h);
+}
+
+function drawSprite(key,x,y,bounce=0){
+  const img=IMG[key];
+  if(img){
+    ctx.drawImage(img,x,y-bounce,64,64);
+  } else {
+    ctx.fillStyle="#333";
+    ctx.fillRect(x,y,64,64);
+    ctx.fillStyle="#111";
+    ctx.fillText(key,x+4,y+16);
+  }
+}
+
+function drawOverlay(){
+  if(!FX.overlay) return;
+  const {kind,x,y,t}=FX.overlay;
+  ctx.fillStyle="#111";
+  ctx.textAlign="center";
+
+  if(kind==="confusion"){
+    const dx = Math.sin(t/3)*4;
+    ctx.fillText("???", x+dx, y-18);
+  } else if(kind==="sleep"){
+    ctx.fillText("Zzz", x, y-18);
+  } else if(kind==="burn"){
+    ctx.fillText("🔥", x, y-18);
+  }
+  ctx.textAlign="left";
+}
+
+function drawFloatTexts(){
+  ctx.fillStyle="#111";
+  ctx.textAlign="center";
+  FX.floatTexts.forEach(ft=>{
+    ctx.fillText(ft.text, ft.x, ft.y);
+  });
+  ctx.textAlign="left";
+}
+
+/* =====================
+   TEXTBOX
+===================== */
+function drawTextbox(){
+  if(!UI.text && !UI.typing && UI.queue.length===0) return;
+
+  const x=8,y=168,w=304,h=64;
+  drawBox(x,y,w,h);
+
+  const m=boxMetrics(w,h);
+  const innerX=x+m.padL, innerY=y+m.padT;
+  const innerW=w-m.padL-m.padR;
+
+  ctx.fillStyle="#111";
+  ctx.font=FONT_MAIN;
+
+  const raw=(UI.visible||UI.text);
+  const linesRaw=raw.split("\n");
+  const lines=[];
+
+  for(const lr of linesRaw){
+    if(!lr){ lines.push(""); continue; }
+    const wrapped = wrapText(lr, innerW, 12);
+    wrapped.forEach(s=>lines.push(s));
+  }
+
+  const lineH=14;
+  for(let i=0;i<Math.min(3,lines.length);i++){
+    drawFittedText(lines[i], innerX, innerY + i*lineH, innerW, 12, 9);
+  }
+}
+
+/* =====================
+   MENU + 2 INFO BOXES
+   - gauche: liste
+   - droite haut: move/type/cat (ou item)
+   - droite bas: stats Remy + ennemi
+===================== */
+function statusTag(f){
+  let s="";
+  if(f.status.burn) s+="B";
+  if(f.status.sleep>0) s+="Z";
+  if(f.status.confusion>0) s+="?";
+  return s ? (" "+s) : "";
+}
+
+function catShort(cat){
+  if(cat==="physical") return "PHYS";
+  if(cat==="special")  return "SPEC";
+  return "STAT";
+}
+
+function effShort(move){
+  const e=move.effects||[];
+  if(!e.length) return "-";
+  const tags=[];
+  e.forEach(x=>{
+    if(x.kind==="burn") tags.push("BRL");
+    if(x.kind==="sleep") tags.push("SLP");
+    if(x.kind==="confusion") tags.push("CNF");
+    if(x.kind==="heal") tags.push("HEAL");
+  });
+  return tags.join(",");
+}
+
+function drawMenu(){
+  if(!UI.menu) return;
+
+  const y=168, h=64;
+  const xList=8, wList=200;
+  const gap=2;
+  const xInfo=xList+wList+gap;
+  const wInfo=304-wList-gap;
+
+  // 2 petites boxes à droite
+  const hTop=30;
+  const hBot=h-hTop;
+
+  // boxes
+  drawBox(xList,y,wList,h);
+  drawBox(xInfo,y,wInfo,hTop);
+  drawBox(xInfo,y+hTop,wInfo,hBot);
+
+  // LIST
+  const ml=boxMetrics(wList,h);
+  const lx=xList+ml.padL, ly=y+ml.padT;
+  const lw=wList-ml.padL-ml.padR;
+
+  ctx.fillStyle="#111";
+  ctx.font="12px monospace";
+
+  const curW=10, curH=10;
+
+  for(let i=0;i<Math.min(4,UI.items.length);i++){
+    const yy = ly + i*14;
+    if(i===UI.menuIdx){
+      if(IMG.cursor) ctx.drawImage(IMG.cursor, lx, yy-9, curW, curH);
+      else ctx.fillText("▶", lx, yy);
+    }
+    drawFittedText(UI.items[i], lx+16, yy, lw-16, 12, 9);
+  }
+
+  // INFO TOP
+  const mt=boxMetrics(wInfo,hTop);
+  const tx=xInfo+mt.padL, ty=y+mt.padT;
+  const tw=wInfo-mt.padL-mt.padR;
+
+  ctx.fillStyle="#111";
+  ctx.font="10px monospace";
+
+  if(UI.menuKind==="moves"){
+    const mv = player.moves[UI.menuIdx];
+    if(mv){
+      const line1 = `T:${mv.type}  C:${catShort(mv.category||"physical")}`;
+      const line2 = `P:${mv.power||0}  E:${effShort(mv)}`;
+      drawFittedText(line1, tx, ty+2, tw, 10, 8);
+      drawFittedText(line2, tx, ty+14, tw, 10, 8);
+    }
+  } else if(UI.menuKind==="bag"){
+    const it = BAG[UI.menuIdx];
+    if(it){
+      drawFittedText(it.desc, tx, ty+10, tw, 10, 8);
+    }
+  } else {
+    const pick = UI.items[UI.menuIdx] || "";
+    const hint = (pick==="FIGHT") ? "Choisir attaque" :
+                 (pick==="BAG")   ? "Utiliser objet" :
+                 (pick==="RUN")   ? "Tenter fuite"   : "";
+    drawFittedText(hint, tx, ty+10, tw, 10, 8);
+  }
+
+  // INFO BOTTOM (STATS)
+  const mb=boxMetrics(wInfo,hBot);
+  const sx=xInfo+mb.padL, sy=y+hTop+mb.padT;
+  const sw=wInfo-mb.padL-mb.padR;
+
+  ctx.font="9px monospace";
+
+  const pLine = `R A${player.atk} D${player.def} S${player.sp} V${player.spd}${statusTag(player)}`;
+  const eLine = enemy
+    ? `E A${enemy.atk} D${enemy.def} S${enemy.sp} V${enemy.spd}${statusTag(enemy)}`
+    : `E -`;
+
+  drawFittedText(pLine, sx, sy+2, sw, 9, 7);
+  drawFittedText(eLine, sx, sy+14, sw, 9, 7);
+}
+
+/* =====================
+   BATTLE SCENE
+===================== */
+function drawBattle(){
+  if(IMG.battle) ctx.drawImage(IMG.battle,0,0,W,H);
+  else{ ctx.fillStyle="#e9e2b8"; ctx.fillRect(0,0,W,H); }
+
+  const enemyBounce = FX.hitAnim.enemy>0 ? (FX.hitAnim.enemy%2?2:1) : 0;
+  const playerBounce = FX.hitAnim.player>0 ? (FX.hitAnim.player%2?2:1) : 0;
+
+  if(enemy) drawSprite(enemy.sprite, 210, 40, enemyBounce);
+  drawSprite(player.sprite, 40, 110, playerBounce);
+
+  // HUD enemy
+  if(enemy){
+    const bx=12, by=10, bw=178, bh=60;
+    drawBox(bx,by,bw,bh);
+    const m=boxMetrics(bw,bh);
+    const ix=bx+m.padL, iy=by+m.padT, iw=bw-m.padL-m.padR;
+
+    ctx.fillStyle="#111";
+    drawFittedText(enemy.name, ix, iy+2, iw, 11, 8);
+    drawFittedText(enemy.types.join(" / "), ix, iy+14, iw, 10, 8);
+
+    const barY = iy+22;
+    drawHPBar(ix, barY, enemy.hpVis, enemy.maxHP, 70, 5);
+    ctx.font="10px monospace";
+    ctx.fillText(`HP ${Math.round(enemy.hpVis)}/${enemy.maxHP}`, ix, barY+16);
+  }
+
+  // HUD player
+  const pbx=138, pby=108, pbw=174, pbh=64;
+  drawBox(pbx,pby,pbw,pbh);
+  {
+    const m=boxMetrics(pbw,pbh);
+    const ix=pbx+m.padL, iy=pby+m.padT, iw=pbw-m.padL-m.padR;
+
+    ctx.fillStyle="#111";
+    drawFittedText("Remy", ix, iy+2, iw, 11, 8);
+    drawFittedText(player.types.join(" / "), ix, iy+14, iw, 10, 8);
+
+    const barY=iy+22;
+    drawHPBar(ix, barY, player.hpVis, player.maxHP, 70, 5);
+    ctx.font="10px monospace";
+    ctx.fillText(`HP ${Math.round(player.hpVis)}/${player.maxHP}`, ix, barY+16);
+  }
+
+  drawOverlay();
+  drawFloatTexts();
+}
+
+/* =====================
+   LOOP
+===================== */
+let last=performance.now();
+
+function updateHpVisuals(dt){
+  const speed = 90 * (dt/1000);
+  const stepToward = (cur, target) => {
+    if(Math.abs(cur-target) < 0.2) return target;
+    if(cur < target) return Math.min(target, cur + speed);
+    return Math.max(target, cur - speed);
+  };
+
+  player.hpVis = stepToward(player.hpVis, player.hp);
+  if(enemy) enemy.hpVis = stepToward(enemy.hpVis, enemy.hp);
+}
+
+function loop(now){
+  const dt=now-last; last=now;
+  if(UI.cooldown>0) UI.cooldown-=dt;
+
+  updateText(dt);
+  updateFX();
+  updateHpVisuals(dt);
+
+  ctx.save();
+  ctx.translate(FX.shakeX, FX.shakeY);
+
+  ctx.font=FONT_MAIN;
+
+  if(gameState==="TITLE" || gameState==="ENDING"){
+    ctx.fillStyle="#f3f0da";
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#111";
+    ctx.textAlign="center";
+    ctx.fillText("BRIOUDE 2026",160,80);
+    ctx.fillText("a tale of AURA",160,96);
+    ctx.textAlign="left";
+    drawTextbox();
+  } else {
+    drawBattle();
+    if(UI.text || UI.typing || UI.queue.length) drawTextbox();
+    else drawMenu();
+  }
+
+  ctx.restore();
+
+  if(FX.flashFrames>0){
+    ctx.fillStyle="rgba(255,255,255,0.6)";
+    ctx.fillRect(0,0,W,H);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+/* =====================
+   BOOT
+===================== */
+preloadAssets(()=>{
+  if(IMG.textbox){
+    UI_SKIN.slice = detectNineSlice(IMG.textbox);
+  }
+  startTitle();
+  requestAnimationFrame(loop);
+});
+
+})();
+</script>
 </body>
 </html>

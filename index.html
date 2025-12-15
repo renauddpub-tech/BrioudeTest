@@ -1016,7 +1016,7 @@ function drawMenu(){
     const yy = ly + i*14;
     if(i===UI.menuIdx){
       if(IMG.cursor) ctx.drawImage(IMG.cursor, lx, yy-9, curW, curH);
-      else ctx.fillText("▶", lx, yy);
+      else ctx.fillText("▶️", lx, yy);
     }
     drawFittedText(UI.items[i], lx+16, yy, lw-16, 12, 9);
   }

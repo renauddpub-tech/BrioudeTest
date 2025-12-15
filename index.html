@@ -32,28 +32,18 @@
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 ctx.imageSmoothingEnabled=false;
-ctx.textAlign="left";
-ctx.textBaseline="alphabetic"; // on garde "alphabetic" par défaut (FX, overlays, etc.)
+ctx.textBaseline="alphabetic";
 const W=canvas.width,H=canvas.height;
 
 const FONT_MAIN = "12px monospace";
 
 /* =====================
-   [PATCH] CONFIG (vitesse texte + délai entre tours)
+   CONFIG (vitesse texte + délai entre tours)
 ===================== */
 const CONFIG = {
-  typeDelayMs: 50,     // vitesse de frappe (22 -> 50)
-  turnDelayMs: 500     // délai visuel entre attaques (joueur -> ennemi)
+  typeDelayMs: 50,     // vitesse de frappe
+  turnDelayMs: 500     // délai entre attaques (joueur -> ennemi)
 };
-
-/* =====================
-   HELPER: baseline "top" dans les cartouches
-===================== */
-function withBaseline(baseline, fn){
-  const old = ctx.textBaseline;
-  ctx.textBaseline = baseline;
-  try{ fn(); } finally { ctx.textBaseline = old; }
-}
 
 /* =====================
    ASSETS
@@ -184,7 +174,6 @@ function queueText(t){ UI.queue.push(t); }
 function updateText(dt){
   if(!UI.typing) return;
   UI.timer+=dt;
-
   while(UI.timer >= CONFIG.typeDelayMs && UI.idx<UI.text.length){
     UI.visible+=UI.text[UI.idx++];
     UI.timer-=CONFIG.typeDelayMs;
@@ -203,21 +192,19 @@ function openMenu(items, kind){
 }
 
 /* =====================
-   [PATCH] TOUR ENNEMI "différé"
+   TOUR ENNEMI "différé"
 ===================== */
 let pendingEnemyAction = null;
 
 function scheduleEnemyTurn(){
   pendingEnemyAction = () => {
     UI.cooldown = Math.max(UI.cooldown, CONFIG.turnDelayMs);
-    setTimeout(() => {
-      enemyTurn();
-    }, CONFIG.turnDelayMs);
+    setTimeout(() => enemyTurn(), CONFIG.turnDelayMs);
   };
 }
 
 /* =====================
-   9-SLICE TEXTBOX (anti-déformation)
+   9-SLICE TEXTBOX (PATCH: alpha-aware + clip)
 ===================== */
 const UI_SKIN = { slice:null };
 
@@ -233,12 +220,55 @@ function detectNineSlice(img){
     octx.drawImage(img,0,0);
     const d=octx.getImageData(0,0,w,h).data;
 
+    const alphaAt=(x,y)=> d[(y*w+x)*4 + 3];
+
+    const cx=(w/2)|0, cy=(h/2)|0;
+    const thr=16;
+
+    // Si le centre est transparent (cas de ton PNG), on détecte les bordures via alpha.
+    if(alphaAt(cx,cy) <= thr){
+      let l=0,r=0,t=0,b=0;
+
+      // gauche : depuis le centre vers la gauche, trouver la première bordure opaque
+      let hitX=-1;
+      for(let x=cx; x>=0; x--){
+        if(alphaAt(x,cy) > thr){ hitX=x; break; }
+      }
+      // droite : depuis le centre vers la droite
+      let hitXR=-1;
+      for(let x=cx; x<w; x++){
+        if(alphaAt(x,cy) > thr){ hitXR=x; break; }
+      }
+      // haut : depuis le centre vers le haut
+      let hitY=-1;
+      for(let y=cy; y>=0; y--){
+        if(alphaAt(cx,y) > thr){ hitY=y; break; }
+      }
+      // bas : depuis le centre vers le bas
+      let hitYB=-1;
+      for(let y=cy; y<h; y++){
+        if(alphaAt(cx,y) > thr){ hitYB=y; break; }
+      }
+
+      if(hitX<0 || hitXR<0 || hitY<0 || hitYB<0){
+        return {l:24,r:24,t:24,b:24};
+      }
+
+      l = hitX + 1;
+      r = w - hitXR;
+      t = hitY + 1;
+      b = h - hitYB;
+
+      const max=Math.floor(Math.min(w,h)/3);
+      l=clamp(l,8,max); r=clamp(r,8,max); t=clamp(t,8,max); b=clamp(b,8,max);
+      return {l,r,t,b};
+    }
+
+    // Fallback couleur (si jamais centre non transparent)
     const get=(x,y)=>{
       const i=(y*w+x)*4;
       return [d[i],d[i+1],d[i+2],d[i+3]];
     };
-
-    const cx=(w/2)|0, cy=(h/2)|0;
 
     let sr=0,sg=0,sb=0,c=0;
     for(let yy=cy-2; yy<=cy+2; yy++){
@@ -268,7 +298,9 @@ function detectNineSlice(img){
 
 function boxMetrics(w,h){
   const img=IMG.textbox;
-  if(!img || !UI_SKIN.slice) return {dl:6,dr:6,dt:6,db:6,padL:12,padT:14,padR:12,padB:12};
+  if(!img || !UI_SKIN.slice){
+    return {dl:6,dr:6,dt:6,db:6,padL:12,padT:14,padR:12,padB:12};
+  }
 
   const iw=img.naturalWidth||img.width;
   const ih=img.naturalHeight||img.height;
@@ -281,6 +313,7 @@ function boxMetrics(w,h){
   let dt=Math.max(2, Math.round(UI_SKIN.slice.t*sy));
   let db=Math.max(2, Math.round(UI_SKIN.slice.b*sy));
 
+  // éviter que les bordures "mangent" toute la box
   const fitLR = (w-2);
   if(dl+dr>fitLR){
     const k=fitLR/(dl+dr);
@@ -294,10 +327,22 @@ function boxMetrics(w,h){
     db=Math.max(1, (db*k)|0);
   }
 
-  const padL = dl + 8;
-  const padR = dr + 8;
-  const padT = dt + 10;
-  const padB = db + 8;
+  // PATCH: paddings qui restent compatibles avec des petites boxes (info/menu)
+  let padL = dl + 8;
+  let padR = dr + 8;
+  let padT = dt + 10;
+  let padB = db + 8;
+
+  if(padL+padR > w-4){
+    const k=(w-4)/(padL+padR);
+    padL=Math.max(2, (padL*k)|0);
+    padR=Math.max(2, (padR*k)|0);
+  }
+  if(padT+padB > h-4){
+    const k=(h-4)/(padT+padB);
+    padT=Math.max(2, (padT*k)|0);
+    padB=Math.max(2, (padB*k)|0);
+  }
 
   return {dl,dr,dt,db,padL,padT,padR,padB};
 }
@@ -341,6 +386,20 @@ function drawBox(x,y,w,h){
   ctx.strokeRect(x,y,w,h);
 }
 
+function clipBoxContent(x,y,w,h,fn){
+  const m=boxMetrics(w,h);
+  const cx = x + m.dl + 1;
+  const cy = y + m.dt + 1;
+  const cw = Math.max(0, w - m.dl - m.dr - 2);
+  const ch = Math.max(0, h - m.dt - m.db - 2);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(cx,cy,cw,ch);
+  ctx.clip();
+  fn();
+  ctx.restore();
+}
+
 /* =====================
    TEXT FIT
 ===================== */
@@ -349,7 +408,6 @@ function setFont(px){ ctx.font = `${px}px monospace`; }
 function ellipsize(text, maxW, px){
   setFont(px);
   if(ctx.measureText(text).width <= maxW) return text;
-
   const ell="...";
   let cut=text.length;
   while(cut>0 && ctx.measureText(text.slice(0,cut)+ell).width>maxW) cut--;
@@ -369,11 +427,9 @@ function drawFittedText(text, x, y, maxW, basePx, minPx=6){
 
 function wrapText(text, maxW, basePx){
   setFont(basePx);
-
   const words = text.split(/\s+/).filter(Boolean);
   const lines = [];
   let line = "";
-
   const push = (l)=>{ if(l!=="") lines.push(l); };
 
   for(let word of words){
@@ -510,22 +566,13 @@ const CAMPAIGN=[
 ===================== */
 function computeDamage(attacker,defender,move){
   const cat = move.category || "physical";
-
-  if(!move.power || move.power<=0){
-    return { dmg:0, mult:1, isCrit:false };
-  }
+  if(!move.power || move.power<=0) return { dmg:0, mult:1, isCrit:false };
 
   let atkStat = attacker.atk;
   let defStat = defender.def;
 
-  if(cat==="special"){
-    atkStat = attacker.sp;
-    defStat = defender.spDef;
-  }
-
-  if(cat==="physical" && attacker.status.burn){
-    atkStat = Math.floor(atkStat*0.5);
-  }
+  if(cat==="special"){ atkStat = attacker.sp; defStat = defender.spDef; }
+  if(cat==="physical" && attacker.status.burn){ atkStat = Math.floor(atkStat*0.5); }
 
   const base=(atkStat/defStat)*move.power;
   const randFactor=0.85+Math.random()*0.15;
@@ -534,7 +581,7 @@ function computeDamage(attacker,defender,move){
   const critChance = clamp(0.06 + attacker.spd/220, 0.06, 0.20);
   const isCrit = chance(critChance);
 
-  let dmg=Math.max(1,Math.floor(base*randFactor*mult*(isCrit?1.9:1)));
+  const dmg=Math.max(1,Math.floor(base*randFactor*mult*(isCrit?1.9:1)));
   return{ dmg, mult, isCrit };
 }
 
@@ -601,7 +648,6 @@ function chooseEnemyMove(enemy, player){
 
     const mult=typeMultiplier(m.type,player.types);
     score += (mult*25);
-
     score += (m.power||0);
 
     const effects=m.effects||[];
@@ -613,13 +659,9 @@ function chooseEnemyMove(enemy, player){
     }
 
     if(player.hp<30 && (m.power||0)>=18) score += 15;
-
     score += Math.random()*6;
 
-    if(score>bestScore){
-      bestScore=score;
-      best=m;
-    }
+    if(score>bestScore){ bestScore=score; best=m; }
   });
 
   return best || enemy.moves[0];
@@ -664,7 +706,6 @@ function useItem(item){
     if(player.status.confusion>0){ player.status.confusion=0; queueText("Confusion retiree."); }
     else queueText("Aucun effet.");
   }
-
   queueText("...");
 }
 
@@ -683,7 +724,7 @@ function startTitle(){
   gameState="TITLE";
   fightIndex=0;
   enemy=null;
-  pendingEnemyAction = null;
+  pendingEnemyAction=null;
   UI.menu=false; UI.menuKind="none";
   UI.items=[]; UI.menuIdx=0; UI.queue=[];
   showText("BRIOUDE 2026\n\na tale of AURA\n\nAppuie sur Entree");
@@ -692,14 +733,13 @@ function startTitle(){
 function startEnding(){
   gameState="ENDING";
   enemy=null;
-  pendingEnemyAction = null;
+  pendingEnemyAction=null;
   UI.menu=false; UI.menuKind="none";
   UI.items=[]; UI.menuIdx=0; UI.queue=[];
   showText("Bravo.\n\nMAKE BRIOUDE GREAT AGAIN !\n\nAppuie sur Entree");
 }
 
 function startFight(i){
-  gameState="FIGHT";
   fightIndex=i;
   const d=CAMPAIGN[i];
   enemy=createFighter(d.name,d.types,d.stats,d.sprite);
@@ -709,7 +749,7 @@ function startFight(i){
   enemy.hp=enemy.maxHP;   enemy.hpVis=enemy.maxHP;
   resetStatuses(player); resetStatuses(enemy);
 
-  pendingEnemyAction = null;
+  pendingEnemyAction=null;
 
   showText("Un adversaire apparait !");
   queueText(d.name+" entre en scene !");
@@ -718,7 +758,7 @@ function startFight(i){
 }
 
 function endFightWin(){
-  pendingEnemyAction = null;
+  pendingEnemyAction=null;
   UI.menu=false; UI.menuKind="none";
   showText(enemy.name+" est hors debat !");
   queueText(CAMPAIGN[fightIndex].quote);
@@ -726,7 +766,7 @@ function endFightWin(){
 }
 
 function endFightLose(){
-  pendingEnemyAction = null;
+  pendingEnemyAction=null;
   UI.menu=false; UI.menuKind="none";
   showText("Remy est a court d'arguments...");
   queueText("Le debat est perdu.");
@@ -739,7 +779,7 @@ function attemptRun(){
     queueText("Fuite reussie.");
     queueText("Appuie sur Entree.");
     enemy=null;
-    pendingEnemyAction = null;
+    pendingEnemyAction=null;
     gameState="TITLE_PENDING";
   }else{
     queueText("Impossible de fuir !");
@@ -787,6 +827,7 @@ function playerUseMove(idx){
   burnTick(enemy);
 
   if(enemy.hp<=0){ endFightWin(); return; }
+
   scheduleEnemyTurn();
 }
 
@@ -797,8 +838,8 @@ function playerUseBag(idx){
 
   useItem(item);
   burnTick(enemy);
-
   if(enemy && enemy.hp<=0){ endFightWin(); return; }
+
   scheduleEnemyTurn();
 }
 
@@ -848,13 +889,8 @@ document.addEventListener("keydown",e=>{
   if(UI.cooldown>0) return;
 
   if(gameState==="TITLE" && e.key==="Enter"){
+    gameState="FIGHT";
     startFight(0);
-    UI.cooldown=180;
-    return;
-  }
-
-  if(gameState==="ENDING" && e.key==="Enter"){
-    startTitle();
     UI.cooldown=180;
     return;
   }
@@ -864,11 +900,8 @@ document.addEventListener("keydown",e=>{
       const progressed = nextText();
 
       if(!progressed){
-        if(gameState==="TITLE_PENDING"){
-          startTitle();
-          UI.cooldown=180;
-          return;
-        }
+        if(gameState==="TITLE_PENDING"){ startTitle(); UI.cooldown=180; return; }
+        if(gameState==="ENDING"){ startTitle(); UI.cooldown=180; return; }
 
         if(enemy && enemy.hp<=0){
           fightIndex++;
@@ -878,15 +911,11 @@ document.addEventListener("keydown",e=>{
           return;
         }
 
-        if(player.hp<=0){
-          startTitle();
-          UI.cooldown=180;
-          return;
-        }
+        if(player.hp<=0){ startTitle(); UI.cooldown=180; return; }
 
         if(gameState==="FIGHT" && enemy && pendingEnemyAction){
-          const fn = pendingEnemyAction;
-          pendingEnemyAction = null;
+          const fn=pendingEnemyAction;
+          pendingEnemyAction=null;
           fn();
           UI.cooldown = Math.max(UI.cooldown, CONFIG.turnDelayMs);
           return;
@@ -952,9 +981,8 @@ function drawHPBar(x,y,hpVis,maxHP,w=60,h=5){
 
 function drawSprite(key,x,y,bounce=0){
   const img=IMG[key];
-  if(img){
-    ctx.drawImage(img,x,y-bounce,64,64);
-  } else {
+  if(img) ctx.drawImage(img,x,y-bounce,64,64);
+  else{
     ctx.fillStyle="#333";
     ctx.fillRect(x,y,64,64);
     ctx.fillStyle="#111";
@@ -967,7 +995,6 @@ function drawOverlay(){
   const {kind,x,y,t}=FX.overlay;
   ctx.fillStyle="#111";
   ctx.textAlign="center";
-  ctx.font="12px monospace";
 
   if(kind==="confusion"){
     const dx = Math.sin(t/3)*4;
@@ -983,15 +1010,12 @@ function drawOverlay(){
 function drawFloatTexts(){
   ctx.fillStyle="#111";
   ctx.textAlign="center";
-  ctx.font="10px monospace";
-  FX.floatTexts.forEach(ft=>{
-    ctx.fillText(ft.text, ft.x, ft.y);
-  });
+  FX.floatTexts.forEach(ft=> ctx.fillText(ft.text, ft.x, ft.y));
   ctx.textAlign="left";
 }
 
 /* =====================
-   TEXTBOX
+   TEXTBOX (PATCH: clip texte dans cartouche)
 ===================== */
 function drawTextbox(){
   if(!UI.text && !UI.typing && UI.queue.length===0) return;
@@ -999,11 +1023,11 @@ function drawTextbox(){
   const x=8,y=168,w=304,h=64;
   drawBox(x,y,w,h);
 
-  const m=boxMetrics(w,h);
-  const innerX=x+m.padL, innerY=y+m.padT;
-  const innerW=w-m.padL-m.padR;
+  clipBoxContent(x,y,w,h, ()=>{
+    const m=boxMetrics(w,h);
+    const innerX=x+m.padL, innerY=y+m.padT;
+    const innerW=w-m.padL-m.padR;
 
-  withBaseline("top", ()=>{
     ctx.fillStyle="#111";
     ctx.font=FONT_MAIN;
 
@@ -1015,7 +1039,6 @@ function drawTextbox(){
       if(!lr){ lines.push(""); continue; }
       const wrapped = wrapText(lr, innerW, 12);
       wrapped.forEach(s=>lines.push(s));
-      if(lines.length>=3) break;
     }
 
     const lineH=14;
@@ -1071,8 +1094,8 @@ function drawMenu(){
   drawBox(xInfo,y,wInfo,hTop);
   drawBox(xInfo,y+hTop,wInfo,hBot);
 
-  withBaseline("top", ()=>{
-    // LIST
+  // LIST (clippée)
+  clipBoxContent(xList,y,wList,h, ()=>{
     const ml=boxMetrics(wList,h);
     const lx=xList+ml.padL, ly=y+ml.padT;
     const lw=wList-ml.padL-ml.padR;
@@ -1085,13 +1108,15 @@ function drawMenu(){
     for(let i=0;i<Math.min(4,UI.items.length);i++){
       const yy = ly + i*14;
       if(i===UI.menuIdx){
-        if(IMG.cursor) ctx.drawImage(IMG.cursor, lx, yy+2, curW, curH); // [PATCH] align top-baseline
-        else ctx.fillText("▶", lx, yy+1);
+        if(IMG.cursor) ctx.drawImage(IMG.cursor, lx, yy-9, curW, curH);
+        else ctx.fillText("▶", lx, yy);
       }
       drawFittedText(UI.items[i], lx+16, yy, lw-16, 12, 9);
     }
+  });
 
-    // INFO TOP
+  // INFO TOP (clippée)
+  clipBoxContent(xInfo,y,wInfo,hTop, ()=>{
     const mt=boxMetrics(wInfo,hTop);
     const tx=xInfo+mt.padL, ty=y+mt.padT;
     const tw=wInfo-mt.padL-mt.padR;
@@ -1117,12 +1142,15 @@ function drawMenu(){
       const hint = (pick==="FIGHT") ? "Choisir attaque" :
                    (pick==="BAG")   ? "Utiliser objet" :
                    (pick==="RUN")   ? "Tenter fuite"   : "";
+
       const lines = wrapText(hint, tw, 10);
       drawFittedText(lines[0] || "", tx, ty+2,  tw, 10, 6);
       drawFittedText(lines[1] || "", tx, ty+14, tw, 10, 6);
     }
+  });
 
-    // INFO BOTTOM (STATS)
+  // INFO BOTTOM (clippée)
+  clipBoxContent(xInfo,y+hTop,wInfo,hBot, ()=>{
     const mb=boxMetrics(wInfo,hBot);
     const sx=xInfo+mb.padL, sy=y+hTop+mb.padT;
     const sw=wInfo-mb.padL-mb.padR;
@@ -1156,41 +1184,37 @@ function drawBattle(){
   if(enemy){
     const bx=12, by=10, bw=178, bh=60;
     drawBox(bx,by,bw,bh);
-    const m=boxMetrics(bw,bh);
-    const ix=bx+m.padL, iy=by+m.padT, iw=bw-m.padL-m.padR;
 
-    withBaseline("top", ()=>{
+    clipBoxContent(bx,by,bw,bh, ()=>{
+      const m=boxMetrics(bw,bh);
+      const ix=bx+m.padL, iy=by+m.padT, iw=bw-m.padL-m.padR;
+
       ctx.fillStyle="#111";
-      drawFittedText(enemy.name, ix, iy, iw, 11, 8);
-      drawFittedText(enemy.types.join(" / "), ix, iy+12, iw, 10, 8);
+      drawFittedText(enemy.name, ix, iy+2, iw, 11, 8);
+      drawFittedText(enemy.types.join(" / "), ix, iy+14, iw, 10, 8);
 
       const barY = iy+22;
       drawHPBar(ix, barY, enemy.hpVis, enemy.maxHP, 70, 5);
-
-      // [PATCH] HP texte remonté pour rester DANS le cartouche
-      drawFittedText(`HP ${Math.round(enemy.hpVis)}/${enemy.maxHP}`, ix, barY+8, iw, 10, 6);
+      drawFittedText(`HP ${Math.round(enemy.hpVis)}/${enemy.maxHP}`, ix, barY+16, iw, 10, 6);
     });
   }
 
   // HUD player
   const pbx=138, pby=108, pbw=174, pbh=64;
   drawBox(pbx,pby,pbw,pbh);
-  {
+
+  clipBoxContent(pbx,pby,pbw,pbh, ()=>{
     const m=boxMetrics(pbw,pbh);
     const ix=pbx+m.padL, iy=pby+m.padT, iw=pbw-m.padL-m.padR;
 
-    withBaseline("top", ()=>{
-      ctx.fillStyle="#111";
-      drawFittedText("Remy", ix, iy, iw, 11, 8);
-      drawFittedText(player.types.join(" / "), ix, iy+12, iw, 10, 8);
+    ctx.fillStyle="#111";
+    drawFittedText("Remy", ix, iy+2, iw, 11, 8);
+    drawFittedText(player.types.join(" / "), ix, iy+14, iw, 10, 8);
 
-      const barY=iy+22;
-      drawHPBar(ix, barY, player.hpVis, player.maxHP, 70, 5);
-
-      // [PATCH] HP texte remonté
-      drawFittedText(`HP ${Math.round(player.hpVis)}/${player.maxHP}`, ix, barY+8, iw, 10, 6);
-    });
-  }
+    const barY=iy+22;
+    drawHPBar(ix, barY, player.hpVis, player.maxHP, 70, 5);
+    drawFittedText(`HP ${Math.round(player.hpVis)}/${player.maxHP}`, ix, barY+16, iw, 10, 6);
+  });
 
   drawOverlay();
   drawFloatTexts();
@@ -1229,13 +1253,11 @@ function loop(now){
   if(gameState==="TITLE" || gameState==="ENDING"){
     ctx.fillStyle="#f3f0da";
     ctx.fillRect(0,0,W,H);
-
     ctx.fillStyle="#111";
     ctx.textAlign="center";
     ctx.fillText("BRIOUDE 2026",160,80);
     ctx.fillText("a tale of AURA",160,96);
     ctx.textAlign="left";
-
     drawTextbox();
   } else {
     drawBattle();
